@@ -1,0 +1,64 @@
+---
+title: "section1"
+author: "Helen Simpson"
+date: "9/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(usmap)
+
+popvote_df <- read_csv("./popvote_1948-2016.csv")
+pvstate_df <- read_csv("./popvote_bystate_1948-2016.csv")
+```
+
+```{r}
+
+pvstate_df$vote_margin <- pvstate_df$R_pv2p - pvstate_df$D_pv2p
+
+pvstate_df %>% 
+  ## subset data
+  filter(state %in% c("New Hampshire","Illinois", "Massachusetts")) %>%
+  # filter(year >= 2000) %>%
+  ## pipe into ggplot()
+  ggplot(aes(x=year, y=vote_margin, color=vote_margin)) + 
+  ## specify a grid by state
+  facet_wrap(. ~ state) + 
+  ## add plot elements
+  geom_hline(yintercept=0,color="gray") +
+  geom_line(size=2) + 
+  geom_point(size=6) +
+  ## specify scale colors
+  scale_colour_gradient(low = "blue", high = "red") +
+  scale_fill_gradient(low = "blue", high = "red") +
+  ## specify titles, labels
+  xlab("") +
+  ylab("Republican vote-share margin") + 
+  ggtitle("Swing states that moved sharply to the left in 2016") +
+  ## switch position of x-axis and y-axis
+  coord_flip() +
+  ## make x-axis (year) run from top to bottom
+  scale_x_reverse(breaks=unique(pvstate_df$year)) +
+  theme_minimal() + 
+  theme(panel.border    = element_blank(),
+        plot.title      = element_text(size = 20, hjust = 0.5, face="bold"), 
+        legend.position = "none",
+        axis.title      = element_text(size=18),
+        axis.text.x     = element_text(angle = 45, hjust = 1),
+        axis.text       = element_text(size = 18),
+        strip.text      = element_text(size = 18, face = "bold"))
+
+```
+-Inspired by this graphic from section
+Let's start out with a basic question: how does partisanship affect states over time? Over this 68-year dataset, do states revert to the nationwide mean? Do states have individual means that they revert to?
+-Why does reversion to the mean occur?
+-Two potential processes: reversion to the mean and changing means over time. Which predicts better?
+```{r}
+pvstate_df <- pvstate_df %>% rowwise() %>% mutate(previous_year = toString(year - 4))
+```
