@@ -64,18 +64,14 @@ Let's start out with a basic question: how does partisanship affect states over 
 ```{r}
 pvstate_df <- pvstate_df %>% rowwise() %>% mutate(previous_year = toString(year - 4)) %>% group_by(state, year)
 
-pvstate_df <- pvstate_df %>% group_by(state) %>% arrange(year) %>% mutate(prev_Rvote = dplyr::lag(R_pv2p))
+pvstate_df <- pvstate_df %>% 
+  group_by(state) %>% arrange(year) %>% 
+  mutate(prev_Rvote = dplyr::lag(R_pv2p))
 
-pvstate_df$prev_Rvote <- dplyr::lag(pvstate_df$R_pv2p)
-
-test <- pvstate_df %>% 
-  filter(state == "Massachusetts") %>%
-  arrange(year) %>%
-  mutate(prev_Rvote = dplyr::lead(pvstate_df$R_pv2p, default = 0))
-
-#for some reason I can't get dplyr::lag to work with mutate. It may have something to do with the vector lengths? Anyway this works now
-test2 <- pvstate_df %>% filter(state == "Massachusetts") %>% arrange(year)
-test2$test_lag <- dplyr::lag(test2$R_pv2p)
-
+pvstate_df %>% ggplot(aes(x = prev_Rvote, y = R_pv2p, color = year)) + 
+  geom_point() + 
+  scale_color_gradient(low = "red", high = "blue") + 
+  geom_abline() + 
+  theme_classic()
 
 ```
