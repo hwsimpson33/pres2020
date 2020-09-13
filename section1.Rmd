@@ -14,6 +14,8 @@ library(tidyverse)
 library(ggplot2)
 library(usmap)
 library(nlme)
+library(lmtest)
+library(broom)
 
 popvote_df <- read_csv("./popvote_1948-2016.csv")
 pvstate_df <- read_csv("./popvote_bystate_1948-2016.csv")
@@ -154,8 +156,21 @@ pvstate_nona <- pvstate_df %>%
   filter(!is.na(R_pv2p)) %>% 
   select(state, year, R_pv2p, fake_var)
 
-lmList(R_pv2p ~ fake_var | state, data = pvstate_nona) #generates list of means
+reg_list <- lmList(R_pv2p ~ fake_var | state, data = pvstate_nona) #generates list of means
 
+test_data <- pvstate_nona %>% filter(state == "Alabama")
+
+reg_test <- lm(R_pv2p ~ year, data = test_data)
+
+dwtest(lm(R_pv2p ~ year, data = test_data), alternative = c("two.sided"))
+
+```
+
+```{r}
+
+test_results = pvstate_nona %>% group_by(state) %>% 
+  do(my_results <- tidy(dwtest(lm(R_pv2p ~ year, data = .), alternative = c("two.sided"))))
+     
 
 
 ```
