@@ -14,4 +14,6 @@ First, I decided to plot state-level results against results from the previous e
 
 [Click here to see full-size image](https://hwsimpson33.github.io/pres2020/images/across_elections.png)
 
+A few observations jumped out at me right away. First, most points are clustered the 45&deg; line.
+
 [Back to main page](https://hwsimpson33.github.io/pres2020/)
