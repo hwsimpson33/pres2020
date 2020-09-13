@@ -14,6 +14,6 @@ First, I decided to plot state-level results against results from the previous e
 
 [Click here to see full-size image](https://hwsimpson33.github.io/pres2020/images/across_elections.png)
 
-A few observations jumped out at me right away. First, most points are clustered around the 45&deg; line. Second, it seems like recent elections (red dots) are closer to the line than older elections (grey dots).
+A few observations jumped out at me right away. First, most points are clustered around the 45&deg; line, which means that the previous election's result does give you information about the likely result in this election. Second, it seems like recent elections (red dots) are closer to the line than older elections (grey dots). If states that voted very Republican in the last election are increasingly likely to vote very Republican in this election, this result could indicate that political polarization has increased.
 
 [Back to main page](https://hwsimpson33.github.io/pres2020/)

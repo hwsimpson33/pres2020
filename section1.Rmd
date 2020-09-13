@@ -15,6 +15,7 @@ library(ggplot2)
 library(usmap)
 library(lmtest)
 library(broom)
+library(kableExtra)
 
 popvote_df <- read_csv("./popvote_1948-2016.csv")
 pvstate_df <- read_csv("./popvote_bystate_1948-2016.csv")
@@ -93,7 +94,7 @@ pvstate_df$vote_margin <- pvstate_df$R_pv2p - pvstate_df$D_pv2p
 
 pvstate_df %>% 
   ## subset data
-  filter(state %in% c("California","Arizona", "Alaska")) %>%
+  filter(state %in% c("Iowa","South Dakota", "Mississippi")) %>%
   # filter(year >= 2000) %>%
   ## pipe into ggplot()
   ggplot(aes(x=year, y=vote_margin, color=vote_margin)) + 
@@ -146,6 +147,8 @@ across_elections_plot <- pvstate_df %>% ggplot(aes(x = prev_Rvote, y = R_pv2p, c
 
 ggsave("docs/images/across_elections.png", plot = across_elections_plot, height = 4.5, width = 6.5)
 
+summary(lm(R_pv2p ~ prev_Rvote, data = pvstate_df))
+
 ```
 
 ```{r autocorrelation, echo=FALSE}
@@ -161,11 +164,11 @@ pvstate_nona <- pvstate_df %>%
 
 #run dw tests on trendlines by state using dplyr::do
 #do requires output to be dfs, so tidy (which turns test outputs into dfs). if you come across this problem again, see this page https://github.com/tidyverse/dplyr/issues/397
-test_results = pvstate_nona %>% group_by(state) %>% 
+dwtest_results = pvstate_nona %>% group_by(state) %>% 
   do(tidy(dwtest(lm(R_pv2p ~ year, data = .), alternative = c("two.sided"))))
 
 #plot results of dw tests
-autocorr_plot <- test_results %>% 
+autocorr_plot <- dwtest_results %>% 
   ggplot(aes(x = statistic)) + 
   geom_histogram(bins = 10) + 
   theme_classic() +
@@ -174,6 +177,8 @@ autocorr_plot <- test_results %>%
        title = "Durbin-Watson Tests on State-level Results")
 
 ggsave("docs/images/autocorr.png", plot = autocorr_plot, height = 2.5, width = 4)
+
+dwtest_results %>% filter(statistic > 2) %>% select(state, statistic, p.value) %>% arrange(p.value) %>% kable()
      
 ```
 
