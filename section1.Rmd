@@ -20,7 +20,7 @@ library(broom)
 popvote_df <- read_csv("./popvote_1948-2016.csv")
 pvstate_df <- read_csv("./popvote_bystate_1948-2016.csv")
 
-#ToDo: autocorrelation test, density by year labels, writeup, post 
+#ToDo: durbin-watson + density by year labels, writeup, post 
 ```
 
 ```{r extension.3, echo=FALSE}
@@ -45,8 +45,8 @@ pvstate_df <- read_csv("./popvote_bystate_1948-2016.csv")
 #     theme_void()
 
 #extension 3: change the formula from win margin to swing margin
-
 #swing formula: D proportion of 2 party vote this year - D proportion of 2 party vote 4 years ago
+#I also changed the formatting a little: I had to reset the gradient bc the difference ranges from about -17% to 17%. I also added axis labels
 pv_change_map <- pvstate_df %>% 
   group_by(state) %>% arrange(year) %>% 
   mutate(prev_R = dplyr::lag(R), 
@@ -132,12 +132,12 @@ Let's start out with a basic question: how does partisanship affect states over 
 -Two potential processes: reversion to the mean and changing means over time. Which predicts better?
 
 ```{r}
-pvstate_df <- pvstate_df %>% rowwise() %>% mutate(previous_year = toString(year - 4))
-
+#create a new variable for lagged R vote share. This is also done above under extension3, but that's inside someone else's code and it's cleaner do it again in my own style here.
 pvstate_df <- pvstate_df %>% 
   group_by(state) %>% arrange(year) %>% 
   mutate(prev_Rvote = dplyr::lag(R_pv2p))
 
+#make graph -- see example in The Gamble Ch. 7, p. 191
 across_elections_plot <- pvstate_df %>% ggplot(aes(x = prev_Rvote, y = R_pv2p, color = year)) + 
   geom_point() + 
   scale_color_gradient("Year", low = "gray", high = "red") + 
@@ -150,29 +150,38 @@ ggsave("across_elections.png", plot = across_elections_plot, height = 4.5, width
 ```
 
 ```{r autocorrelation, echo=FALSE}
+#run durbin-watson autocorrelation tests and plot results
 
+#cleans n/a, selects relevant variables. not sure if this is still needed but it won't hurt. I added this stuff in response to various errors that earlier approaches were throwing.
 pvstate_nona <- pvstate_df %>% 
-  mutate(fake_var = 1) %>% #it won't let me run an empty regression - so I'll regress against zero
+  mutate(fake_var = 1) %>% #it won't let me run an empty regression - so I'll regress against a constant
   filter(!is.na(R_pv2p)) %>% 
   select(state, year, R_pv2p, fake_var)
 
-lmList(R_pv2p ~ fake_var | state, data = pvstate_nona) #generates list of means
+#the regression against a constant idea didn't end up working bc the dwtest function didn't like it. I'll keep the variable here for posterity
 
-test_data <- pvstate_nona %>% filter(state == "Alabama") 
-dwtest(lm(R_pv2p ~ fake_var, data = test_data), alternative = c("two.sided"))
-
+#run dw tests on trendlines by state using dplyr::do
+#do requires output to be dfs, so tidy (which turns test outputs into dfs). if you come across this problem again, see this page https://github.com/tidyverse/dplyr/issues/397
 test_results = pvstate_nona %>% group_by(state) %>% 
-  do(my_results <- tidy(dwtest(lm(R_pv2p ~ year, data = .), alternative = c("two.sided"))))
+  do(tidy(dwtest(lm(R_pv2p ~ year, data = .), alternative = c("two.sided"))))
 
-test_results %>% ggplot(aes(x = statistic)) + geom_histogram(bins = 10) + theme_classic()
+#plot results of dw tests
+autocorr_plot <- test_results %>% 
+  ggplot(aes(x = statistic)) + 
+  geom_histogram(bins = 10) + 
+  theme_classic() +
+  labs(x = "Durbin-Watson statistic", 
+       y = "Frequency", 
+       title = "Durbin-Watson Tests on State-level Results")
+
+ggsave("autocorr.png", plot = autocorr_plot, height = 2.5, width = 4)
      
 ```
 
 ```{r density, echo=FALSE}
+#plot histograms of R vote by state for each election year in one diagram
+density_by_year_plot <- pvstate_df %>% ggplot(aes(x = R_pv2p)) + facet_wrap(. ~year) + geom_density() + theme_classic() + labs(x = "Republican share of two-party vote by state", y = "Frequency", title = "How the distribution of Republican state-level vote share has changed over time")
 
-# density_by_year_plot <- 
-pvstate_df %>% ggplot(aes(x = R_pv2p)) + facet_wrap(. ~year) + geom_density() + theme_classic() + labs()
-
-ggsave("density_by_year.png", plot = density_by_year_plot, height = 4, width = 7)
+ggsave("density_by_year.png", plot = density_by_year_plot, height = 4, width = 7.25)
 
 ```
