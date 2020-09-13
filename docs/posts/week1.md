@@ -8,4 +8,10 @@ This week, I decided to do Extension 3:
 
 This graphic, as well as the 538 swing state graphic replication from section, inspired me to think more carefully about what causes swings in voting share in a particular state from election to election. I decided to ask a basic question: is the fluctuation in state-level vote random? We talk a lot about which states have become safe or swing states, assuming that changes from election to election in state-level voting patterns are driven by political events and not random chance. As a preliminary check, I decided to test this hypothesis.
 
+First, I decided to plot state-level results against results from the previous election. Inspired by the graph in _The Gamble_ Chapter 7 (p. 191), I made this graph:
+
+<img src = "../images/across_elections.png">
+
+[Click here to see full-size image](https://hwsimpson33.github.io/pres2020/images/across_elections.png)
+
 [Back to main page](https://hwsimpson33.github.io/pres2020/)
