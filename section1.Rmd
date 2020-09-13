@@ -13,6 +13,7 @@ rm(list = ls())
 library(tidyverse)
 library(ggplot2)
 library(usmap)
+library(nlme)
 
 popvote_df <- read_csv("./popvote_1948-2016.csv")
 pvstate_df <- read_csv("./popvote_bystate_1948-2016.csv")
@@ -135,15 +136,27 @@ pvstate_df <- pvstate_df %>%
   group_by(state) %>% arrange(year) %>% 
   mutate(prev_Rvote = dplyr::lag(R_pv2p))
 
-pvstate_df %>% ggplot(aes(x = prev_Rvote, y = R_pv2p, color = year)) + 
+across_elections_plot <- pvstate_df %>% ggplot(aes(x = prev_Rvote, y = R_pv2p, color = year)) + 
   geom_point() + 
   scale_color_gradient("Year", low = "gray", high = "red") + 
   geom_abline() + 
   theme_classic() + 
   labs(x = "Republican vote in the previous election", y = "Republican two-party vote share in this election", title = "State-level Republican two-party vote share across elections", caption = "The black line is x = y.")
 
+ggsave("across_elections.png", plot = across_elections_plot, height = 4.5, width = 6.5)
+
 ```
+
 ```{r autocorrelation, echo=FALSE}
+
+pvstate_nona <- pvstate_df %>% 
+  mutate(fake_var = 0) %>% #it won't let me run an empty regression - so I'll regress against zero
+  filter(!is.na(R_pv2p)) %>% 
+  select(state, year, R_pv2p, fake_var)
+
+lmList(R_pv2p ~ fake_var | state, data = pvstate_nona) #generates list of means
+
+
 
 ```
 
