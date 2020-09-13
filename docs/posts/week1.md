@@ -3,7 +3,7 @@
 This week, I decided to do Extension 3:
 
 master, relative link
-![Image](/.../Images/extension3.png)
+![Image](../../Images/extension3.png)
 
 
 
