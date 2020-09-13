@@ -13,7 +13,6 @@ rm(list = ls())
 library(tidyverse)
 library(ggplot2)
 library(usmap)
-library(nlme)
 library(lmtest)
 library(broom)
 
@@ -69,7 +68,7 @@ extension3_plot <- plot_usmap(data = pv_change_map, regions = "states", values =
   labs(title = "Change in percent of two-party vote from previous presidential election", 
        subtitle  = "Blue states voted more Democratic, red states voted more Republican")
 
-ggsave("docs/images/extension3.png", plot = extension3_plot, height = 3, width = 7)
+ggsave("docs/images/extension3.png", plot = extension3_plot, height = 6, width = 14)
 
 
 # ## map grid

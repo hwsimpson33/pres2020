@@ -2,9 +2,7 @@
 ### September 13, 2020
 This week, I decided to do Extension 3:
 
-master, relative link
 ![Image](../images/extension3.png)
-
-new test text...please work
+This graphic, as well as the 538 swing state graphic replication, inspired me to think more carefully about what causes swings in voting share in a particular state from election to election. I decided to ask a basic question
 
 [Back to main page](https://hwsimpson33.github.io/pres2020/)
