@@ -1,4 +1,4 @@
-## Understanding Polarization through Serial Correlation
+## Understanding polarization through serial correlation
 ### September 13, 2020
 This week, I decided to do Extension 3:
 
@@ -14,6 +14,6 @@ First, I decided to plot state-level results against results from the previous e
 
 [Click here to see full-size image](https://hwsimpson33.github.io/pres2020/images/across_elections.png)
 
-A few observations jumped out at me right away. First, most points are clustered the 45&deg; line.
+A few observations jumped out at me right away. First, most points are clustered around the 45&deg; line. Second, it seems like recent elections (red dots) are closer to the line than older elections (grey dots).
 
 [Back to main page](https://hwsimpson33.github.io/pres2020/)
