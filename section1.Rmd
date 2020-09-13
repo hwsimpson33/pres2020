@@ -17,29 +17,29 @@ library(usmap)
 popvote_df <- read_csv("./popvote_1948-2016.csv")
 pvstate_df <- read_csv("./popvote_bystate_1948-2016.csv")
 
-#ToDo: autocorrelation test, changes in mean/ variance over time histograms 
+#ToDo: autocorrelation test, density by year labels, writeup, post 
 ```
 
 ```{r extension.3, echo=FALSE}
 
 #code from section, corrected so that the win margins map shows all maps since 1980 instead of just 2000
 ## map: win-margins
-pv_margins_map <- pvstate_df %>%
-    filter(year >= 1980) %>%
-    mutate(win_margin = (R_pv2p-D_pv2p))
-
-plot_usmap(data = pv_margins_map, regions = "states", values = "win_margin") +
-  facet_wrap(facets = year ~.) +
-    scale_fill_gradient2(
-      high = "red", 
-      mid = scales::muted("purple"), ##TODO: purple or white better?
-      #mid = "white",
-      low = "blue", 
-      breaks = c(-50,-10,0,10,50), 
-      limits = c(-50,50),
-      name = "win margin"
-    ) +
-    theme_void()
+# pv_margins_map <- pvstate_df %>%
+#     filter(year >= 1980) %>%
+#     mutate(win_margin = (R_pv2p-D_pv2p))
+# 
+# plot_usmap(data = pv_margins_map, regions = "states", values = "win_margin") +
+#   facet_wrap(facets = year ~.) +
+#     scale_fill_gradient2(
+#       high = "red", 
+#       mid = scales::muted("purple"), ##TODO: purple or white better?
+#       #mid = "white",
+#       low = "blue", 
+#       breaks = c(-50,-10,0,10,50), 
+#       limits = c(-50,50),
+#       name = "win margin"
+#     ) +
+#     theme_void()
 
 #extension 3: change the formula from win margin to swing margin
 
@@ -53,7 +53,7 @@ pv_change_map <- pvstate_df %>%
          diff = D_twoparty - prev_D_twoparty) %>% 
   filter(year >= 1980) #if you do this before the mutate(), 1980 will have all N/As
 
-extension3.plot <- plot_usmap(data = pv_change_map, regions = "states", values = "diff") +
+extension3_plot <- plot_usmap(data = pv_change_map, regions = "states", values = "diff") +
   facet_wrap(facets = year ~.) +
     scale_fill_gradient2(high = "red", 
                          mid = scales::muted("purple"), ##TODO: purple or white better?
@@ -66,7 +66,7 @@ extension3.plot <- plot_usmap(data = pv_change_map, regions = "states", values =
   labs(title = "Change in percent of two-party vote from previous presidential election", 
        subtitle  = "Blue states voted more Democratic, red states voted more Republican")
 
-ggsave("extension3.png", height = 3, width = 7)
+ggsave("extension3.png", plot = extension3_plot, height = 3, width = 7)
 
 
 # ## map grid
@@ -122,10 +122,12 @@ pvstate_df %>%
         strip.text      = element_text(size = 18, face = "bold"))
 
 ```
+
 -Inspired by this graphic from section
 Let's start out with a basic question: how does partisanship affect states over time? Over this 68-year dataset, do states revert to the nationwide mean? Do states have individual means that they revert to?
 -Why does reversion to the mean occur?
 -Two potential processes: reversion to the mean and changing means over time. Which predicts better?
+
 ```{r}
 pvstate_df <- pvstate_df %>% rowwise() %>% mutate(previous_year = toString(year - 4))
 
@@ -142,5 +144,14 @@ pvstate_df %>% ggplot(aes(x = prev_Rvote, y = R_pv2p, color = year)) +
 
 ```
 ```{r autocorrelation, echo=FALSE}
+
+```
+
+```{r density, echo=FALSE}
+
+# density_by_year_plot <- 
+pvstate_df %>% ggplot(aes(x = R_pv2p)) + facet_wrap(. ~year) + geom_density() + theme_classic() + labs()
+
+ggsave("density_by_year.png", plot = density_by_year_plot, height = 4, width = 7)
 
 ```
