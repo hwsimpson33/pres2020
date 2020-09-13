@@ -69,7 +69,7 @@ extension3_plot <- plot_usmap(data = pv_change_map, regions = "states", values =
   labs(title = "Change in percent of two-party vote from previous presidential election", 
        subtitle  = "Blue states voted more Democratic, red states voted more Republican")
 
-ggsave("extension3.png", plot = extension3_plot, height = 3, width = 7)
+ggsave("images/extension3.png", plot = extension3_plot, height = 3, width = 7)
 
 
 # ## map grid
@@ -145,7 +145,7 @@ across_elections_plot <- pvstate_df %>% ggplot(aes(x = prev_Rvote, y = R_pv2p, c
   theme_classic() + 
   labs(x = "Republican vote in the previous election", y = "Republican two-party vote share in this election", title = "State-level Republican two-party vote share across elections", caption = "The black line is x = y.")
 
-ggsave("across_elections.png", plot = across_elections_plot, height = 4.5, width = 6.5)
+ggsave("Images/across_elections.png", plot = across_elections_plot, height = 4.5, width = 6.5)
 
 ```
 
@@ -174,7 +174,7 @@ autocorr_plot <- test_results %>%
        y = "Frequency", 
        title = "Durbin-Watson Tests on State-level Results")
 
-ggsave("autocorr.png", plot = autocorr_plot, height = 2.5, width = 4)
+ggsave("Images/autocorr.png", plot = autocorr_plot, height = 2.5, width = 4)
      
 ```
 
@@ -182,6 +182,6 @@ ggsave("autocorr.png", plot = autocorr_plot, height = 2.5, width = 4)
 #plot histograms of R vote by state for each election year in one diagram
 density_by_year_plot <- pvstate_df %>% ggplot(aes(x = R_pv2p)) + facet_wrap(. ~year) + geom_density() + theme_classic() + labs(x = "Republican share of two-party vote by state", y = "Frequency", title = "How the distribution of Republican state-level vote share has changed over time")
 
-ggsave("density_by_year.png", plot = density_by_year_plot, height = 4, width = 7.25)
+ggsave("Images/density_by_year.png", plot = density_by_year_plot, height = 4, width = 7.25)
 
 ```
