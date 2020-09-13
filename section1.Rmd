@@ -94,7 +94,7 @@ pvstate_df$vote_margin <- pvstate_df$R_pv2p - pvstate_df$D_pv2p
 
 pvstate_df %>% 
   ## subset data
-  filter(state %in% c("New Hampshire","Illinois", "Massachusetts")) %>%
+  filter(state %in% c("California","Arizona", "Alaska")) %>%
   # filter(year >= 2000) %>%
   ## pipe into ggplot()
   ggplot(aes(x=year, y=vote_margin, color=vote_margin)) + 
@@ -152,27 +152,20 @@ ggsave("across_elections.png", plot = across_elections_plot, height = 4.5, width
 ```{r autocorrelation, echo=FALSE}
 
 pvstate_nona <- pvstate_df %>% 
-  mutate(fake_var = 0) %>% #it won't let me run an empty regression - so I'll regress against zero
+  mutate(fake_var = 1) %>% #it won't let me run an empty regression - so I'll regress against zero
   filter(!is.na(R_pv2p)) %>% 
   select(state, year, R_pv2p, fake_var)
 
-reg_list <- lmList(R_pv2p ~ fake_var | state, data = pvstate_nona) #generates list of means
+lmList(R_pv2p ~ fake_var | state, data = pvstate_nona) #generates list of means
 
-test_data <- pvstate_nona %>% filter(state == "Alabama")
-
-reg_test <- lm(R_pv2p ~ year, data = test_data)
-
-dwtest(lm(R_pv2p ~ year, data = test_data), alternative = c("two.sided"))
-
-```
-
-```{r}
+test_data <- pvstate_nona %>% filter(state == "Alabama") 
+dwtest(lm(R_pv2p ~ fake_var, data = test_data), alternative = c("two.sided"))
 
 test_results = pvstate_nona %>% group_by(state) %>% 
   do(my_results <- tidy(dwtest(lm(R_pv2p ~ year, data = .), alternative = c("two.sided"))))
+
+test_results %>% ggplot(aes(x = statistic)) + geom_histogram(bins = 10) + theme_classic()
      
-
-
 ```
 
 ```{r density, echo=FALSE}
