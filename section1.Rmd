@@ -177,7 +177,7 @@ ggsave("docs/images/state_reg_plot.png", plot = state_reg_plot, height = 10, wid
 #plot results of dw tests
 autocorr_plot <- dwtest_results %>% 
   ggplot(aes(x = statistic)) + 
-  geom_histogram(bins = 10) + 
+  geom_histogram(bins = 10, fill = "black") + 
   theme_classic() +
   labs(x = "Durbin-Watson statistic", 
        y = "Frequency", 
@@ -192,12 +192,17 @@ dwtest_results %>%
         caption = "Results of Durbin-Watson tests on state-level Republican share of two-party vote relative to year") %>% 
      save_kable("docs/images/dwtest_table.png")
 
+#list dw results that are significant
+dwtest_results %>%
+  filter(p.value < 0.05) %>% 
+  select(state, statistic, p.value) %>% 
+  arrange(p.value)
+
+#list dw results with negative autocorrelation
 dwtest_results %>%
   filter(statistic > 2) %>% 
   select(state, statistic, p.value) %>% 
-  arrange(state) %>% 
-  kable(col.names = c("State", "Statistic", "P Value"), 
-        caption = "Results of Durbin-Watson tests on state-level Republican share of two-party vote relative to year")
+  arrange(statistic)
 ```
 
 ```{r density, echo=FALSE}
