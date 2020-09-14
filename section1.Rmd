@@ -172,8 +172,8 @@ state_reg_plot <- pvstate_nona %>% group_by(state) %>% ggplot(aes(x = year, y = 
   geom_line() + 
   geom_smooth(method = "lm") +  
   facet_wrap(. ~ state) + theme_classic() + 
-  labs(xlab = "Year", 
-       ylab = "Republican Share of Two-Party Vote", 
+  labs(x = "Year", 
+       y = "Republican Share of Two-Party Vote", 
        title = "Trendlines of Republican Share of Vote in All States")
 
 ggsave("docs/images/state_reg_plot.png", plot = state_reg_plot, height = 10, width = 15)
