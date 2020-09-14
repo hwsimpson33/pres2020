@@ -167,6 +167,13 @@ pvstate_nona <- pvstate_df %>%
 dwtest_results = pvstate_nona %>% group_by(state) %>% 
   do(tidy(dwtest(lm(R_pv2p ~ year, data = .), alternative = c("two.sided"))))
 
+state_reg_plot <- pvstate_nona %>% group_by(state) %>% ggplot(aes(x = year, y = R_pv2p)) + 
+  geom_line() + 
+  geom_smooth(method = "lm") +  
+  facet_wrap(. ~ state) + theme_classic()
+
+ggsave("docs/images/state_reg_plot.png", plot = state_reg_plot, height = 10, width = 15)
+
 #plot results of dw tests
 autocorr_plot <- dwtest_results %>% 
   ggplot(aes(x = statistic)) + 
@@ -176,10 +183,21 @@ autocorr_plot <- dwtest_results %>%
        y = "Frequency", 
        title = "Durbin-Watson Tests on State-level Results")
 
-ggsave("docs/images/autocorr.png", plot = autocorr_plot, height = 2.5, width = 4)
+ggsave("docs/images/autocorr.png", plot = autocorr_plot, height = 5, width = 8)
 
-dwtest_results %>% filter(statistic > 2) %>% select(state, statistic, p.value) %>% arrange(p.value) %>% kable()
-     
+dwtest_results %>%
+  select(state, statistic, p.value) %>% 
+  arrange(state) %>% 
+  kable(col.names = c("State", "Statistic", "P Value"), 
+        caption = "Results of Durbin-Watson tests on state-level Republican share of two-party vote relative to year") %>% 
+     save_kable("docs/images/dwtest_table.png")
+
+dwtest_results %>%
+  filter(statistic > 2) %>% 
+  select(state, statistic, p.value) %>% 
+  arrange(state) %>% 
+  kable(col.names = c("State", "Statistic", "P Value"), 
+        caption = "Results of Durbin-Watson tests on state-level Republican share of two-party vote relative to year")
 ```
 
 ```{r density, echo=FALSE}
