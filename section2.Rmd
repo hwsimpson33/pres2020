@@ -1,0 +1,57 @@
+---
+title: "section2"
+author: "Helen Simpson"
+date: "9/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list = ls())
+
+library(tidyverse)
+library(ggplot2)
+
+pop.vote <- read_csv("./popvote_1948-2016.csv")
+state.pop.vote <- read_csv("./popvote_bystate_1948-2016.csv")
+
+economy <- read_csv("./econ.csv")
+state.economy <- read_csv("./local.csv")
+```
+
+```{r nation.level}
+
+#copied from section code
+dat <- popvote_df %>% 
+  filter(incumbent_party == TRUE) %>%
+  select(year, winner, pv2p) %>%
+  left_join(economy_df %>% filter(quarter == 2))
+
+## scatterplot + line
+dat %>%
+  ggplot(aes(x=GDP_growth1, y=pv2p,
+             label=year)) + 
+  geom_text() +
+  geom_smooth(method="lm", formula = y ~ x) +
+  geom_hline(yintercept=50, lty=2) +
+  geom_vline(xintercept=0.01, lty=2) + # median
+  xlab("Second quarter GDP growth") +
+  ylab("Incumbent party's national popular pv2p") +
+  theme_bw()
+
+## fit a model
+lm_econ <- lm(pv2p ~ GDP_growth_qt, data = dat)
+summary(lm_econ)
+
+
+```
+
+```{r state.level}
+
+```
+
+```{r pooled}
+
+```
+
