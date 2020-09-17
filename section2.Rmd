@@ -18,6 +18,8 @@ state.pop.vote <- read_csv("./popvote_bystate_1948-2016.csv")
 
 economy <- read_csv("./econ.csv")
 state.economy <- read_csv("./local.csv")
+
+#ToDo: national linear model, state-level linear model, pooled (multilevel model), writeup
 ```
 
 ```{r nation.level}
@@ -48,10 +50,11 @@ summary(lm_econ)
 ```
 
 ```{r state.level}
-
+#todo: merge, linear model, predict + measure uncertainty
 ```
 
 ```{r pooled}
+#todo: merge, model, predict + measure uncertainty
 
 ```
 
