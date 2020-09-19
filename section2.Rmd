@@ -165,9 +165,9 @@ nat.state.level %>% filter(term == "GDP_growth_qt", p.value < 0.05) %>%
   arrange(p.value) %>% 
   select(state, estimate, std.error, p.value) %>% 
   kable(col.names = c("State", "Estimate", "Std. error", "p value"), 
-        caption = "Coefficients on National-Level GDP, Percent Change") %>%  
+        caption = "Coefficients on National-Level Q2 GDP, Percent Change") %>%  
   kable_styling(bootstrap_options = c("striped")) %>% 
-  footnote(general = "Model has state-level vote share for incumbent party on the left-hand side and national-level GDP (percent change) on the right-hand side.") %>% 
+  footnote(general = "Model has state-level vote share for incumbent party on the left-hand side and national-level Q2 GDP (percent change) for the election year on the right-hand side.") %>% 
   save_kable("docs/images/nat_state_ec_table.png")
 
 nat.state.level.plot <- nat.state.data %>% 

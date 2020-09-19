@@ -29,7 +29,7 @@ Next, I decided to regress state-level election results on national-level GDP. T
 
 <img src = "../images/nat_state_ec_table.png">
 
-[Click here to see full-size table](https://hwsimpson33.github.io/pres2020/imagees/nat_state_ec_table.png)
+[Click here to see full-size table](https://hwsimpson33.github.io/pres2020/images/nat_state_ec_table.png)
 
 [Click here to see plots of the results](https://hwsimpson33.github.io/pres2020/images/nat_state_ec_plot.png)
 
