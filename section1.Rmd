@@ -163,7 +163,7 @@ pvstate_nona <- pvstate_df %>%
 #the regression against a constant idea didn't end up working bc the dwtest function didn't like it. I'll keep the variable here for posterity
 
 #run dw tests on trendlines by state using dplyr::do
-#do requires output to be dfs, so tidy (which turns test outputs into dfs). if you come across this problem again, see this page https://github.com/tidyverse/dplyr/issues/397
+#do requires output to be dfs, so tidy (which turns test outputs into dfs). if you come across this problem again, see this page https://github(dot)com/tidyverse/dplyr/issues/397
 dwtest_results = pvstate_nona %>% group_by(state) %>% 
   do(tidy(dwtest(lm(R_pv2p ~ year, data = .), alternative = c("two.sided"))))
 

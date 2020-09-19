@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 rm(list = ls())
 
 library(tidyverse)
-library(ggplot2)
+library(kableExtra)
 
 pop.vote <- read_csv("./popvote_1948-2016.csv")
 state.pop.vote <- read_csv("./popvote_bystate_1948-2016.csv")
@@ -19,42 +19,178 @@ state.pop.vote <- read_csv("./popvote_bystate_1948-2016.csv")
 economy <- read_csv("./econ.csv")
 state.economy <- read_csv("./local.csv")
 
-#ToDo: national linear model, state-level linear model, pooled (multilevel model), writeup
+#ToDo: comment code, writeup
 ```
 
 ```{r nation.level}
 
-#copied from section code
-dat <- popvote_df %>% 
+#copied from section code w/ unemployment instead of GDP
+nat.ec <- pop.vote %>% 
   filter(incumbent_party == TRUE) %>%
   select(year, winner, pv2p) %>%
-  left_join(economy_df %>% filter(quarter == 2))
+  left_join(economy %>% filter(quarter == 2))
 
 ## scatterplot + line
-dat %>%
-  ggplot(aes(x=GDP_growth1, y=pv2p,
+nat.unem.plot <- nat.ec %>%
+  ggplot(aes(x = unemployment, y = pv2p,
              label=year)) + 
   geom_text() +
   geom_smooth(method="lm", formula = y ~ x) +
-  geom_hline(yintercept=50, lty=2) +
-  geom_vline(xintercept=0.01, lty=2) + # median
-  xlab("Second quarter GDP growth") +
-  ylab("Incumbent party's national popular pv2p") +
-  theme_bw()
+  labs(x = "National-level second quarter unemployment", 
+       y = "Incumbent party's share of the national two-party vote", 
+       title = "No detectable relationship between national-level unemployment and incumbent vote share") +
+  theme_classic()
+
+ggsave("docs/images/nat_unem_plot.png", plot = nat.unem.plot, height = 5, width = 8)
 
 ## fit a model
-lm_econ <- lm(pv2p ~ GDP_growth_qt, data = dat)
+lm_econ <- lm(pv2p ~ unemployment, data = nat.ec)
 summary(lm_econ)
 
 
 ```
 
-```{r state.level}
-#todo: merge, linear model, predict + measure uncertainty
+```{r clean.data}
+
+ec.merge.data <- state.economy %>% 
+  filter(`State and area` != "Los Angeles County",
+         `State and area` != "New York city") %>% 
+  filter(Month %in% c("04", "05", "06")) %>% #q2 months only
+  rename(state = `State and area`,
+         year = Year) %>% 
+  arrange(state, year) %>%  #for visual checks of averages
+  group_by(state, year) %>% 
+  mutate(unem.quarter.ave = (sum(Unemployed_prce))/3) %>% #calculate average unem for the quarter
+  filter(Month == "04") %>% #take only one obs per quarter
+  select(state, year, unem.quarter.ave)
+
+#calculate year-on-year unemployment difference, Q2 year2 - Q2 year1
+#I can only get lag() to work with group_by and arrange... not sure why
+ec.merge.data <- ec.merge.data %>% group_by(state) %>% arrange(year) %>%
+  mutate(unem.last = dplyr::lag(unem.quarter.ave), 
+         unem.diff = unem.quarter.ave - unem.last) %>% 
+  arrange(state, year) %>% #for visual checks
+filter(year %in% c(1948, 1952, 1956, 1960, 1964, 1968, 1972, 1976, 1980, 1984, 1988, 1992, 1996, 2000, 2004, 2008, 2012, 2016, 2020)) #election years only
+
+
+#merge state-level unemployment and state-level results from last time
+merge.data <- merge(ec.merge.data, state.pop.vote, by = c("state", "year"), all = TRUE)
+
+#get list of incumbent parties from national-level dataset
+inc.list <- pop.vote %>% filter(incumbent_party == TRUE) %>% 
+  select(year, party) %>% 
+  rename(inc.party = party)
+
+#merge state unem+vote data with incumbent list, set inc.party to two-party vote share of incumbent party
+state.ec.data <- merge(merge.data, inc.list, all = TRUE) %>% mutate(inc.vote = case_when(
+  inc.party == "democrat" ~ D_pv2p,
+  inc.party == "republican" ~ R_pv2p))
 ```
 
-```{r pooled}
-#todo: merge, model, predict + measure uncertainty
+```{r run.state.models}
+#run regressions for all states with 2Q unemploy, save in state.raw.level df
+state.raw.level <- state.ec.data %>% filter(!is.na(inc.vote), 
+                                     !is.na(unem.quarter.ave)) %>% #so that there are no errors with lm
+  group_by(state) %>% 
+  do(tidy(lm(inc.vote ~ unem.quarter.ave, data = .)))
+
+#no significant results
+# View(state.raw.level %>% filter(term == "unem.quarter.ave", p.value < 0.05))
+
+#View(state.ec.data %>% filter(unem.quarter.ave > 10))
+
+#plot regressions for all states with 2Q unemploy
+state.raw.plot <- state.ec.data %>%
+  filter(unem.quarter.ave < 10) %>% #exclude outliers for readability - 14 obs excl 2020 out of 959
+  group_by(state) %>% 
+  ggplot(aes(x = unem.quarter.ave, y = inc.vote)) + 
+    geom_point() + 
+    geom_smooth(method = "lm") + 
+    facet_wrap(. ~ state) + 
+    theme_classic() + 
+    labs(x = "Q2 unemployment during election year", 
+         y = "Incumbent party's share of the two-party vote",
+         title = "Relationship between state-level unemployment (Q2) and incumbent party vote share",
+         subtitle = "Unemployment values of more than 10% excluded as outliers")
+
+ggsave("docs/images/state_raw_ec_plot.png", plot = state.raw.plot, height = 10, width = 15)
+
+#run regressions for all states with year-on-year unemploy diff, save in state.diff.level df
+state.diff.level <- state.ec.data %>% filter(!is.na(inc.vote), 
+                                     !is.na(unem.diff)) %>% #so that there are no errors with lm
+  group_by(state) %>% 
+  do(tidy(lm(inc.vote ~ unem.diff, data = .)))
+
+state.diff.level %>% filter(term == "unem.diff", p.value < 0.05) %>%
+  arrange(p.value) %>% 
+  select(state, estimate, std.error, p.value) %>% 
+  kable(col.names = c("State", "Estimate", "Std. error", "p value"), caption = "Coefficients on Year-on-year Q2 Unemployment Change") %>%  
+  kable_styling(bootstrap_options = c("striped")) %>% 
+  footnote(general = "Model has state-level vote share for incumbent party on the left-hand side and y-o-y Q2 unemployment change only on the right-hand side.") %>% 
+  save_kable("docs/images/state_diff_ec_table.png")
+
+#plot regressions for all states with year-on-year unemploy diff
+state.diff.plot <- state.ec.data %>% 
+  filter(unem.diff < 6) %>% #exclude outliers for readability - 15 obs out of 959
+  group_by(state) %>% 
+  ggplot(aes(x = unem.diff, y = inc.vote)) + 
+    geom_point() + 
+    geom_smooth(method = "lm") + 
+    facet_wrap(. ~ state) + 
+    theme_classic() + 
+    labs(x = "Year-on-year state-level unemployment (election year Q2 - previous year Q2)", 
+         y = "Incumbent party's share of the two-party vote",
+         title = "Relationship between state-level unemployment (year-on-year) and incumbent party vote share",
+         subtitle = "Year-on-year differences of more than 6% excluded as outliers")
+                                                                  
+ggsave("docs/images/state_diff_ec_plot.png", plot = state.diff.plot, height = 15, width = 22.5)
+```
+
+```{r nat.state.model}
+
+#get 2Q gdp from national-level dataset
+nat.ec.merge <- nat.ec %>% select(year, GDP_growth_qt)
+ 
+#merge state dataset and national-level GDP
+nat.state.data <- merge(nat.ec.merge, state.ec.data, by = "year", all = TRUE) %>% filter(!is.na(state))
+
+#regress w/ state-level incumbent vote as y and national-level gdp as the x
+#to test state-level sensitivity to national-level economic conditions
+nat.state.level <- nat.state.data %>% 
+  filter(!is.na(inc.vote)) %>% #so lm doesn't give an error
+  group_by(state) %>% 
+  do(tidy(lm(inc.vote ~ GDP_growth_qt, data = .)))
+
+nat.state.level %>% filter(term == "GDP_growth_qt", p.value < 0.05) %>%
+  arrange(p.value) %>% 
+  select(state, estimate, std.error, p.value) %>% 
+  kable(col.names = c("State", "Estimate", "Std. error", "p value"), 
+        caption = "Coefficients on National-Level GDP, Percent Change") %>%  
+  kable_styling(bootstrap_options = c("striped")) %>% 
+  footnote(general = "Model has state-level vote share for incumbent party on the left-hand side and national-level GDP (percent change) on the right-hand side.") %>% 
+  save_kable("docs/images/nat_state_ec_table.png")
+
+nat.state.level.plot <- nat.state.data %>% 
+  group_by(state) %>% 
+  ggplot(aes(x = GDP_growth_qt, y = inc.vote)) + 
+    geom_point() + 
+    geom_smooth(method = "lm") + 
+    facet_wrap(. ~ state) + 
+    theme_classic() + 
+    labs(x = "National-level GDP",
+         y = "Incumbent party's share of the two-party vote",
+         title = "Relationship betwen national-level GDP and incumbent party vote share by state")
+
+
+ggsave("docs/images/nat_state_ec_plot.png", plot = nat.state.level.plot, height = 10, width = 15)
+
+#states that have significant relationship for y-o-y state-level unemployment AND nat. level GDP: Nevada, New Hampshire, New Mexico, Colorado, Connecticut. There are 11 significant states for both models
+
+```
+
+```{r just.for.fun}
+
+#Papa's model: inc_vote (state-level) ~ recession indicator + year
 
 ```
 
