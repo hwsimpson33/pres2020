@@ -124,7 +124,7 @@ state.diff.level <- state.ec.data %>% filter(!is.na(inc.vote),
 state.diff.level %>% filter(term == "unem.diff", p.value < 0.05) %>%
   arrange(p.value) %>% 
   select(state, estimate, std.error, p.value) %>% 
-  kable(col.names = c("State", "Estimate", "Std. error" "p value"), caption = "Coefficients on Year-on-year Q2 Unemployment Change") %>%  
+  kable(col.names = c("State", "Estimate", "Std. error", "p value"), caption = "Coefficients on Year-on-year Q2 Unemployment Change") %>%  
   kable_styling(bootstrap_options = c("striped")) %>% 
   footnote(general = "Model has state-level vote share for incumbent party on the left-hand side and y-o-y Q2 unemployment change only on the right-hand side.") %>% 
   save_kable("docs/images/state_diff_ec_table.png")
