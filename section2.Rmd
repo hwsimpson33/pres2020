@@ -123,8 +123,8 @@ state.diff.level <- state.ec.data %>% filter(!is.na(inc.vote),
 
 state.diff.level %>% filter(term == "unem.diff", p.value < 0.05) %>%
   arrange(p.value) %>% 
-  select(state, estimate, std.error, p.value) %>% 
-  kable(col.names = c("State", "Estimate", "Std. error", "p value"), caption = "Coefficients on Year-on-year Q2 Unemployment Change") %>%  
+  select(state, estimate, p.value) %>% 
+  kable(col.names = c("State", "Estimate", "p value"), caption = "Coefficients on Year-on-year Q2 Unemployment Change") %>%  
   kable_styling(bootstrap_options = c("striped")) %>% 
   footnote(general = "Model has state-level vote share for incumbent party on the left-hand side and y-o-y Q2 unemployment change only on the right-hand side.") %>% 
   save_kable("docs/images/state_diff_ec_table.png")
@@ -177,9 +177,9 @@ nat.state.level.plot <- nat.state.data %>%
     geom_smooth(method = "lm") + 
     facet_wrap(. ~ state) + 
     theme_classic() + 
-    labs(x = "National-level GDP",
+    labs(x = "National-level 2Q GDP Growth in Election Year",
          y = "Incumbent party's share of the two-party vote",
-         title = "Relationship betwen national-level GDP and incumbent party vote share by state")
+         title = "Relationship betwen national-level GDP growth and incumbent party vote share by state")
 
 
 ggsave("docs/images/nat_state_ec_plot.png", plot = nat.state.level.plot, height = 10, width = 15)

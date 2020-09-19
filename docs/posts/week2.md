@@ -8,6 +8,8 @@ Then I tried year-on-year change in unemployment. Perhaps the absolute level of 
 
 <img src = "../images/state_diff_ec_table.png">
 
+[Click here to see full=size table](https://hwsimpson33.github.io/pres2020/images/state_diff_ec_table.png)
+
 [Click here to see plots of the results](https://hwsimpson33.github.io/pres2020/images/state_diff_ec_plot.png)
 
 # Troubleshooting the model
@@ -29,4 +31,5 @@ These results were also not as strong as I would have hoped. Again, only eleven 
 Perhaps this result indicates that state-level election results are more responsive to other factors (partisanship, campaigning) than the economy. But it is more likely that the sample size is so small that OLS is not powerful enough to give significant results, we aren't controlling for other important factors, or we don't have the right economic measures. I plan to keep exploring this problem in future weeks.
 
 
-Update: It looks like it should be possible to get state-level household income statistics going back to 1962. I'll look into this and add updates here if I find anything interesting.
+# Update
+It looks like it should be possible to get state-level household income statistics going back to 1962. I'll look into this and add updates here if I find anything interesting.
