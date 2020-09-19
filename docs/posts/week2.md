@@ -12,7 +12,7 @@ Then I tried year-on-year change in unemployment. Perhaps the absolute level of 
 
 [Click here to see plots of the results](https://hwsimpson33.github.io/pres2020/images/state_diff_ec_plot.png)
 
-# Troubleshooting the model
+## Troubleshooting the model
 In class, we easily replicated the well-known result that GDP can predict national-level popular vote. What is going wrong in the unemployment models? Does the relationship between the economy and voting break down at the state level? Or is unemployment just a bad way to capture the aspects of economic performance that voters react to? First, I decided to test the relationship between unemployment and national-level election outcomes. 
 
 <img src = "../images/nat_unem_plot.png">
@@ -24,6 +24,8 @@ Next, I decided to regress state-level election results on national-level GDP. T
 
 <img src = "../images/nat_state_ec_table.png">
 
+[Click here to see full-size table](https://hwsimpson33.github.io/pres2020/imagees/nat_state_ec_table.png)
+
 [Click here to see plots of the results](https://hwsimpson33.github.io/pres2020/images/nat_state_ec_plot.png)
 
 These results were also not as strong as I would have hoped. Again, only eleven states have significant coefficients. Notably, five states appear both in this table and the table from the year-on-year state-level unemployment regression above: Connecticut, Colorado, Nevada, New Hampshire, and New Mexico. Three of these states (Colorado, Nevada, New Hampshire) are on [FiveThirtyEight’s list of swing states](https://en.wikipedia.org/wiki/Swing_state), so it makes sense that they would be unusually sensitive to both national- and state-level economic conditions. Other swing states from FiveThirtyEight make one list or the other (Ohio, Virginia, North Carolina, Pennsylvania, Florida, Michigan) or neither list (Iowa, Minnesota, Wisconsin). In general, these results indicate that swing states might be sensitive to economic conditions, but most other states are not sensitive enough to economic conditions to give a statistically significant result.
@@ -31,5 +33,5 @@ These results were also not as strong as I would have hoped. Again, only eleven 
 Perhaps this result indicates that state-level election results are more responsive to other factors (partisanship, campaigning) than the economy. But it is more likely that the sample size is so small that OLS is not powerful enough to give significant results, we aren't controlling for other important factors, or we don't have the right economic measures. I plan to keep exploring this problem in future weeks.
 
 
-# Update
+### Update
 It looks like it should be possible to get state-level household income statistics going back to 1962. I'll look into this and add updates here if I find anything interesting.
