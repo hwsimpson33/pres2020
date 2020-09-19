@@ -1,5 +1,8 @@
 ## Understanding polarization through serial correlation
 ### September 13, 2020
+
+[Back to main page](https://hwsimpson33.github.io/pres2020/)
+
 This week, I decided to do Extension 3:
 
 <img src = "../images/extension3.png">
