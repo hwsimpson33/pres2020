@@ -1,0 +1,15 @@
+---
+title: "section3"
+author: "Helen Simpson"
+date: "9/23/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#it's time for the multi-level model. let's have national-level GDP and state-level real income, state-level vote last election, state level polls*time to election to predict state-level results
+#vs. national-level GDP, state-level real income, state-level vote last election, national-level polls*time to election
+#we're just going to weight 2020 polls as a straight average because I don't have time for anything more complicated
+```
+

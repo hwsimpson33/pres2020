@@ -1,0 +1,17 @@
+---
+title: "data-merge"
+author: "Helen Simpson"
+date: "9/23/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+#from now on, I'm going to do data merging in this .Rmd each week to make a complete dataset that I can then use in each blog post's .Rmd in order to do the week's analysis. This way I will have all variables easily accessible and I won't have to repeat code.
+
+#todo: bring in state-level real income, bring in state-level and national-level polling
+```
+
+
