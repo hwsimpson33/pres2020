@@ -6,20 +6,19 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-
 rm(list = ls())
+
+knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(kableExtra)
+library(broom)
 
 pop.vote <- read_csv("./popvote_1948-2016.csv")
 state.pop.vote <- read_csv("./popvote_bystate_1948-2016.csv")
 
 economy <- read_csv("./econ.csv")
 state.economy <- read_csv("./local.csv")
-
-#ToDo: comment code, writeup
 ```
 
 ```{r nation.level}

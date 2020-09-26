@@ -6,10 +6,32 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+
+rm(list = ls())
+
 knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(broom)
+
+my.data <- read_csv("./all_data.csv")
 
 #it's time for the multi-level model. let's have national-level GDP and state-level real income, state-level vote last election, state level polls*time to election to predict state-level results
 #vs. national-level GDP, state-level real income, state-level vote last election, national-level polls*time to election
-#we're just going to weight 2020 polls as a straight average because I don't have time for anything more complicated
+#compare the models using r2, sample cross-validation (leave one out)
+#use both models to predict 2020
+```
+
+```{r}
+test <- my.data %>% 
+  group_by(state) %>% 
+  filter(year > 1980, !is.na(R_pv2p)) %>% 
+  do(tidy(lm(R_pv2p ~ GDP_growth_qt, data = .)))
+```
+
+```{r}
+#this is being shelved for another day. I don't want to figure this out right now.
+# my.model <- stan_lmer(R_pv2p ~ GDP_growth_qt + (1 + ave.030|state), data = all.data)
+# summary(my.model)
 ```
 
