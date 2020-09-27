@@ -20,13 +20,18 @@ my.data <- read_csv("./all_data.csv")
 #vs. national-level GDP, state-level real income, state-level vote last election, national-level polls*time to election
 #compare the models using r2, sample cross-validation (leave one out)
 #use both models to predict 2020
+#todo: read in 2020 data, read in national data + make national model, compare models (coefficients and p values), make 2020 predictions using local and state models
 ```
 
 ```{r}
 test <- my.data %>% 
   group_by(state) %>% 
-  filter(year > 1980, !is.na(R_pv2p)) %>% 
-  do(tidy(lm(R_pv2p ~ GDP_growth_qt, data = .)))
+  filter(!is.na(R_pv2p), !is.na(ave.30plus)) %>% 
+  do(tidy(lm(R_pv2p ~ prev_Rvote + GDP_growth_qt + ave.30plus + inc.party, data = .)))
+
+
+# my.test <- test %>% filter(term == "ave.3060")
+# hist(my.test$p.value)
 ```
 
 ```{r}

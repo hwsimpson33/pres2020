@@ -96,28 +96,28 @@ state.polling.ave <- state.polling %>%
   distinct()
 
 state.polling.ave <- state.polling %>% 
-  filter(30 <= days_left, days_left < 60) %>% 
+  filter(30 <= days_left) %>% 
   group_by(state, year) %>% 
-  mutate(ave.3060 = sum(r.lead)/length(r.lead)) %>% 
-  select(year, state, ave.3060) %>% 
+  mutate(ave.30plus = sum(r.lead)/length(r.lead)) %>% 
+  select(year, state, ave.30plus) %>% 
   distinct() %>% 
   merge(state.polling.ave, all = TRUE)
 
-state.polling.ave <- state.polling %>% 
-  filter(60 <= days_left, days_left < 120) %>% 
-  group_by(state, year) %>% 
-  mutate(ave.60120 = sum(r.lead)/length(r.lead)) %>% 
-  select(year, state, ave.60120) %>% 
-  distinct() %>% 
-  merge(state.polling.ave, all = TRUE)
-
-state.polling.ave <- state.polling %>% 
-  filter(days_left > 120) %>% 
-  group_by(state, year) %>% 
-  mutate(ave.120 = sum(r.lead)/length(r.lead)) %>% 
-  select(year, state, ave.120) %>% 
-  distinct() %>% 
-  merge(state.polling.ave, all = TRUE)
+# state.polling.ave <- state.polling %>% 
+#   filter(60 <= days_left, days_left < 120) %>% 
+#   group_by(state, year) %>% 
+#   mutate(ave.60120 = sum(r.lead)/length(r.lead)) %>% 
+#   select(year, state, ave.60120) %>% 
+#   distinct() %>% 
+#   merge(state.polling.ave, all = TRUE)
+# 
+# state.polling.ave <- state.polling %>% 
+#   filter(days_left > 120) %>% 
+#   group_by(state, year) %>% 
+#   mutate(ave.120 = sum(r.lead)/length(r.lead)) %>% 
+#   select(year, state, ave.120) %>% 
+#   distinct() %>% 
+#   merge(state.polling.ave, all = TRUE)
 
 all.data <- merge(ec.data, state.polling.ave, all = TRUE)
 
