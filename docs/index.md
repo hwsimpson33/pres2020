@@ -7,3 +7,6 @@ Hello! Gov 1347 is a class on election analytics that will focus on predicting t
 ## [Week 1: Political polarization and serial correlation](posts/week1.md)
 
 ## [Week 2: State-level election results and the economy](posts/week2.md)
+
+## [Week 3: Examining two professional prediction models](posts/week3.md)
+

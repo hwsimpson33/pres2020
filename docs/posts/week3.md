@@ -1,5 +1,5 @@
-## Predicting state-level vote share with economic indicators
-### September 19, 2020
+## Examining Two Professional Prediction Models
+### September 26, 2020
 
 [Back to main page](https://hwsimpson33.github.io/pres2020/)
 
