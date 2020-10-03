@@ -98,7 +98,6 @@ stargazer(model.1, model.2, model.3, type = "html", header = FALSE,
           covariate.labels = c("Television ad difference",
                                "Change in two-party vote share of incumbent president",
                                "Change in per capita income (in 1000s)"), 
-          notes.label = "notes",
           omit.stat = c("f", "ser"),
           omit = c("state"), 
           add.lines = list(c("State fixed effects", "No", "No", "Yes")))
@@ -112,7 +111,6 @@ stargazer(model.4, model.5, model.6, type = "html", header = FALSE,
                                "Campaign appearance difference",
                                "Change in two-party vote share of incumbent president",
                                "Change in per capita income (in 1000s)"), 
-          notes.label = "notes",
           omit.stat = c("f", "ser"),
           omit = c("state"), 
           add.lines = list(c("State fixed effects", "No", "No", "Yes")))
@@ -131,6 +129,6 @@ ad.grant.plot <- my.data %>% ggplot(aes(x = inc_ad_diff, y = dpct_grants)) +
 
 ad.grant.plot
 
-ggsave("docs/images/ad_grant_plot.png", plot = ad.grant.plot, height = 5, width = 8)
+ggsave("docs/images/ad_grant_plot.png", plot = ad.grant.plot, height = 6.25, width = 10)
 ```
 

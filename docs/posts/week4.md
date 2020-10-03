@@ -5,7 +5,7 @@
 
 This week, we read a [2012 paper by political scientists Douglas Kriner and Andrew Reeves, “The Influence of Federal Spending on Presidential Elections.”](https://www.jstor.org/stable/41495082?seq=1) This paper argues that federal grants spending has a statistically significant impact on the results of presidential elections at the county level. Kriner and Reeves use change in vote share instead of raw vote share in order to address the problem of endogeneity: you can’t use changes in grant spending to predict something that might affect changes in grant spending. They assume that presidents’ expectations of changes in vote share in the next election will not affect their grant spending decisions for the year prior to the election, a reasonable assumption. 
 
-They are not interested in exploring whether "presidents may endeavor to reward loyal constituencies and target funds toward swing places, while largely ignoring communities that voted heavily against them.” This suggestion struck me as very plausible in our current political environment, with (certain) politicians openly making statements along these lines. 
+Kriner and Reeves are not interested in exploring whether "presidents may endeavor to reward loyal constituencies and target funds toward swing places, while largely ignoring communities that voted heavily against them.” This suggestion struck me as very plausible in our current political environment, with (certain) politicians openly making statements along these lines. 
 
 If presidents are directing federal grant money strategically, they are likely directing it to the same locations where they direct their campaign resources.[^1] Are changes in federal grant spending correlated with the intensity of electioneering by the incumbent? I decided to use Kriner and Reeves’s replication data to explore this question.
 
@@ -41,7 +41,6 @@ Next, I ran a series of regressions, shown in the table below. It is important t
 <tr><td style="text-align:left">Adjusted R<sup>2</sup></td><td>0.0001</td><td>0.005</td><td>0.014</td></tr>
 <tr><td colspan="4" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">notes</td><td colspan="3" style="text-align:right"><sup>*</sup>p<0.1; <sup>**</sup>p<0.05; <sup>***</sup>p<0.01</td></tr>
 </table>
-length of NULL cannot be changedlength of NULL cannot be changedlength of NULL cannot be changedlength of NULL cannot be changedlength of NULL cannot be changednumber of rows of result is not a multiple of vector length (arg 2)number of rows of result is not a multiple of vector length (arg 2)
 <table style="text-align:center"><caption><strong>Regressing Grants on Ad Spending and Campaign Appearances</strong></caption>
 <tr><td colspan="4" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left"></td><td colspan="3">Percent change in grants</td></tr>
 <tr><td></td><td colspan="3" style="border-bottom: 1px solid black"></td></tr>
