@@ -1,0 +1,77 @@
+---
+title: "section4"
+author: "Helen Simpson"
+date: "10/1/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+rm(list = ls())
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(usmap)
+library(stargazer)
+
+grants.data <- read_csv("./fedgrants_bycounty_1988-2008.csv")
+all.data <- read_csv("./all_data.csv")
+
+my.data <- merge(grants.data, all.data, all = TRUE) %>% filter(!is.na(county_FIPS))
+```
+
+```{r eval=FALSE, include=FALSE}
+###NOT RUN
+#copied from class code for section 1, with modifications
+states_map <- usmap::us_map()
+
+my.plot.data <- my.data %>% group_by(state)
+
+#copied from code for section1
+grant.map.plot <- plot_usmap(data = my.plot.data, regions = "states", values = "R_pv2p") +
+facet_wrap(facets = year ~.) +
+  scale_fill_gradient2(high = "red", 
+                        mid = scales::muted("purple"), ##TODO: purple or white better?
+                        #mid = "white",
+                        low = "blue", 
+                        breaks = c(-20,-10,0,10,20), 
+                        limits = c(-20,20),
+                        name = "Change") +
+  theme_void() +
+  labs(title = "Change in percent of two-party vote from previous presidential election", 
+       subtitle  = "Blue states voted more Democratic, red states voted more Republican")
+
+grant.map.plot
+```
+
+```{r}
+cor(my.data$inc_ad_diff, my.data$dpct_grants)
+cor.test(my.data$inc_ad_diff, my.data$dpct_grants)
+
+model.1 <- lm(dpct_grants ~ inc_ad_diff, data = grants.data)
+summary(model.1)
+
+model.2 <- lm(dpct_grants ~ inc_ad_diff + inc_campaign_diff , data = grants.data)
+summary(model.2)
+
+model.3 <- lm(dpct_grants ~ inc_ad_diff + inc.prev.vote + dpc_income, data = my.data)
+summary(model.3)
+
+model.4 <- lm(dpct_grants ~ inc_ad_diff + inc.prev.vote + dpc_income + state, data = my.data)
+summary(model.4)
+
+model.5 <- lm(dpct_grants ~ inc_ad_diff + inc_campaign_diff + inc.prev.vote + dpc_income, data = my.data)
+summary(model.5)
+
+model.6 <- lm(dpct_grants ~ inc_ad_diff + inc_campaign_diff + inc.prev.vote + dpc_income + state, data = my.data)
+summary(model.6)
+
+stargazer(model.1, model.2, model.3, model.4, model.5, model.6, type = "html")
+```
+
+```{r}
+ad.grant.plot <- my.data %>% ggplot(aes(x = inc_ad_diff, y = dpct_grants)) + geom_point() + theme_classic()
+ad.grant.plot
+```
+

@@ -31,7 +31,8 @@ polling.2020 <- read_csv("./polls_2020.csv")
 #copied from section1: observation is state, year
 state.vote <- state.vote %>% 
   group_by(state) %>% arrange(year) %>% 
-  mutate(prev_Rvote = dplyr::lag(R_pv2p))
+  mutate(prev_Rvote = dplyr::lag(R_pv2p),
+         prev_Dvote = dplyr::lag(D_pv2p))
 ```
 
 ```{r economy, include=FALSE}
@@ -65,9 +66,14 @@ inc.list <- pop.vote %>% filter(incumbent_party == TRUE) %>%
   rename(inc.party = party)
 
 #merge state unem+vote data with incumbent list, set inc.party to two-party vote share of incumbent party
-state.ec.data <- merge(merge.data, inc.list, all = TRUE) %>% mutate(inc.vote = case_when(
-  inc.party == "democrat" ~ D_pv2p,
-  inc.party == "republican" ~ R_pv2p))
+state.ec.data <- merge(merge.data, inc.list, all = TRUE) %>% 
+  mutate(inc.vote = case_when(
+    inc.party == "democrat" ~ D_pv2p,
+    inc.party == "republican" ~ R_pv2p),
+  inc.prev.vote = case_when(
+    inc.party == "democrat" ~ prev_Dvote,
+    inc.party == "republican" ~ prev_Rvote
+    ))
 
 #copied from section code, section2: observation is year
 national.ec <- pop.vote %>% 
