@@ -18,11 +18,12 @@ library(stargazer)
 grants.data <- read_csv("./fedgrants_bycounty_1988-2008.csv")
 all.data <- read_csv("./all_data.csv")
 
+#we're doing the merging here bc this data will likely not carry forward to future weeks
 my.data <- merge(grants.data, all.data, all = TRUE) %>% filter(!is.na(county_FIPS))
 ```
 
 ```{r eval=FALSE, include=FALSE}
-###NOT RUN
+###NOT RUN (I was trying to plot grant data on a map)
 #copied from class code for section 1, with modifications
 states_map <- usmap::us_map()
 
@@ -45,33 +46,91 @@ facet_wrap(facets = year ~.) +
 grant.map.plot
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE}
+#correlation between tv ad spending and grants
 cor(my.data$inc_ad_diff, my.data$dpct_grants)
 cor.test(my.data$inc_ad_diff, my.data$dpct_grants)
 
+#regression models for campaign variables and grants
 model.1 <- lm(dpct_grants ~ inc_ad_diff, data = grants.data)
 summary(model.1)
 
-model.2 <- lm(dpct_grants ~ inc_ad_diff + inc_campaign_diff , data = grants.data)
+model.2 <- lm(dpct_grants ~ inc_ad_diff + inc.prev.vote + dpc_income, data = my.data)
 summary(model.2)
 
-model.3 <- lm(dpct_grants ~ inc_ad_diff + inc.prev.vote + dpc_income, data = my.data)
+#state fixed effects
+model.3 <- lm(dpct_grants ~ inc_ad_diff + inc.prev.vote + dpc_income + state, data = my.data)
 summary(model.3)
 
-model.4 <- lm(dpct_grants ~ inc_ad_diff + inc.prev.vote + dpc_income + state, data = my.data)
+#models 4-6 include campaign appearances as well as ad spending
+model.4 <- lm(dpct_grants ~ inc_ad_diff + inc_campaign_diff , data = grants.data)
 summary(model.4)
 
 model.5 <- lm(dpct_grants ~ inc_ad_diff + inc_campaign_diff + inc.prev.vote + dpc_income, data = my.data)
 summary(model.5)
 
+#state fixed effects
 model.6 <- lm(dpct_grants ~ inc_ad_diff + inc_campaign_diff + inc.prev.vote + dpc_income + state, data = my.data)
 summary(model.6)
-
-stargazer(model.1, model.2, model.3, model.4, model.5, model.6, type = "html")
 ```
 
 ```{r}
-ad.grant.plot <- my.data %>% ggplot(aes(x = inc_ad_diff, y = dpct_grants)) + geom_point() + theme_classic()
+#to generate tabeles for website: run this chunk, copy and paste the output (html code) directly into the .md that generates the webpage. Warnings are suppressed.
+#master table
+# stargazer(model.1, model.2, model.3, model.4, model.5, model.6, type = "html", header = FALSE, 
+#           title = "Regressing Grants on Campaign Variables",
+#           dep.var.labels.include = FALSE,
+#           dep.var.caption = c("Percent change in grants"),
+#           covariate.labels = c("Television ad difference",
+#                                "Campaign appearance difference",
+#                                "Change in two-party vote share of incumbent president",
+#                                "Change in per capita income (in 1000s)"), 
+#           notes.label = "notes",
+#           omit.stat = c("f", "ser"),
+#           omit = c("state"), 
+#           add.lines = list(c("State fixed effects", "No", "No", "Yes", "No", "No", "Yes")))
+
+#small table 1
+stargazer(model.1, model.2, model.3, type = "html", header = FALSE, 
+          title = "Regressing Grants on Ad Spending",
+          dep.var.labels.include = FALSE,
+          dep.var.caption = c("Percent change in grants"),
+          covariate.labels = c("Television ad difference",
+                               "Change in two-party vote share of incumbent president",
+                               "Change in per capita income (in 1000s)"), 
+          notes.label = "notes",
+          omit.stat = c("f", "ser"),
+          omit = c("state"), 
+          add.lines = list(c("State fixed effects", "No", "No", "Yes")))
+
+#small table 2
+stargazer(model.4, model.5, model.6, type = "html", header = FALSE, 
+          title = "Regressing Grants on Ad Spending and Campaign Appearances",
+          dep.var.labels.include = FALSE,
+          dep.var.caption = c("Percent change in grants"),
+          covariate.labels = c("Television ad difference",
+                               "Campaign appearance difference",
+                               "Change in two-party vote share of incumbent president",
+                               "Change in per capita income (in 1000s)"), 
+          notes.label = "notes",
+          omit.stat = c("f", "ser"),
+          omit = c("state"), 
+          add.lines = list(c("State fixed effects", "No", "No", "Yes")))
+```
+
+```{r}
+#plot TV ad spending against federal grants
+#customized colors to match blog theme :) :)
+ad.grant.plot <- my.data %>% ggplot(aes(x = inc_ad_diff, y = dpct_grants)) + 
+  geom_point(color = "#277CB9") + 
+  theme_classic() + 
+  labs(x = "Television ad difference", 
+       y = "Percent change in grants",
+       title = "Correlation between relative television ad spending by incumbent and federal grants") +
+  theme(axis.line = element_line(colour = "#E1E1E1"))
+
 ad.grant.plot
+
+ggsave("docs/images/ad_grant_plot.png", plot = ad.grant.plot, height = 5, width = 8)
 ```
 

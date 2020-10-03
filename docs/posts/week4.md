@@ -1,5 +1,5 @@
-## titletitle
-### date
+## Federal grants and presidential campaigns
+### October 3, 2020
 
 [Back to main page](https://hwsimpson33.github.io/pres2020/)
 
@@ -71,5 +71,7 @@ length of NULL cannot be changedlength of NULL cannot be changedlength of NULL c
 Nevertheless, these results are interesting. The r<sup>2</sup>s are uniformly low, which is to be expected in a model that does not include important control variables. But the differentials in ad spending and campaigning both show a positive relationship with grant spending and they hover near significance. These results certainly do not provide a definitive answer to my question, but they indicate that further study may be warranted. 
 
 More advanced models with more comprehensive data (perhaps extending before 1988 and after 2008) could examine the (likely non-linear) relationship between federal resources and campaign resources. Modeling this relationship would be an important contribution to the literature (if it hasn’t been done already) and, coincidentally, would help me conceptualize one of the problems I’m currently working on, the tradeoff between election fraud and ruling party mobilization in semi-competitive contexts like Russia.
+
+[Back to main page](https://hwsimpson33.github.io/pres2020/)
 
 [^1]: Although it is possible that incumbents use federal money as a substitute to campaign money rather than a complement, we’re not going to address that in this blog post.
