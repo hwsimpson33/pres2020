@@ -10,3 +10,4 @@ Hello! Gov 1347 is a class on election analytics that will focus on predicting t
 
 ## [Week 3: Examining two professional prediction models](posts/week3.md)
 
+## [Week 4: Federal grants and presidential elections](posts/week4.md)
