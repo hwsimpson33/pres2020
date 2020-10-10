@@ -5,7 +5,7 @@
 
 This week, our dataset 
 
-<table style="border-collapse:collapse;" class=table_1937 border=1>
+<table style="border-collapse:collapse;" class=table_4430 border=1>
 <thead>
 <tr>
   <th id="tableHTML_header_1">order</th>
@@ -15,23 +15,23 @@ This week, our dataset
 <tbody>
 <tr>
   <td id="tableHTML_column_1">1</td>
-  <td id="tableHTML_column_2">0.0401583567577881</td>
+  <td id="tableHTML_column_2">0.0402</td>
 </tr>
 <tr>
   <td id="tableHTML_column_1">2</td>
-  <td id="tableHTML_column_2">0.000412323799524697</td>
+  <td id="tableHTML_column_2">4e-04</td>
 </tr>
 <tr>
   <td id="tableHTML_column_1">3</td>
-  <td id="tableHTML_column_2">0.00517386454472519</td>
+  <td id="tableHTML_column_2">0.0052</td>
 </tr>
 <tr>
   <td id="tableHTML_column_1">4</td>
-  <td id="tableHTML_column_2">0.0030748656641527</td>
+  <td id="tableHTML_column_2">0.0031</td>
 </tr>
 <tr>
   <td id="tableHTML_column_1">5</td>
-  <td id="tableHTML_column_2">0.00497528640093208</td>
+  <td id="tableHTML_column_2">0.005</td>
 </tr>
 </tbody>
 </table>
