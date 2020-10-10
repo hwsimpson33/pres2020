@@ -1,5 +1,43 @@
+## Federal grants and presidential campaigns
+### October 3, 2020
 
-<table style="text-align:center"><tr><td colspan="8" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">Statistic</td><td>N</td><td>Mean</td><td>St. Dev.</td><td>Min</td><td>Pctl(25)</td><td>Pctl(75)</td><td>Max</td></tr>
-<tr><td colspan="8" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">order</td><td>5</td><td>3.000</td><td>1.581</td><td>1</td><td>2</td><td>4</td><td>5</td></tr>
-<tr><td style="text-align:left">p.value</td><td>5</td><td>0.011</td><td>0.017</td><td>0.0004</td><td>0.003</td><td>0.005</td><td>0.040</td></tr>
-<tr><td colspan="8" style="border-bottom: 1px solid black"></td></tr></table>
+[Back to main page](https://hwsimpson33.github.io/pres2020/)
+
+This week, our dataset 
+
+<table style="border-collapse:collapse;" class=table_6572 border=1>
+<thead>
+<tr>
+  <th id="tableHTML_header_1"> </th>
+  <th id="tableHTML_header_2">order</th>
+  <th id="tableHTML_header_3">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td id="tableHTML_rownames">1</td>
+  <td id="tableHTML_column_1">1</td>
+  <td id="tableHTML_column_2">0.0401583567577881</td>
+</tr>
+<tr>
+  <td id="tableHTML_rownames">2</td>
+  <td id="tableHTML_column_1">2</td>
+  <td id="tableHTML_column_2">0.000412323799524697</td>
+</tr>
+<tr>
+  <td id="tableHTML_rownames">3</td>
+  <td id="tableHTML_column_1">3</td>
+  <td id="tableHTML_column_2">0.00517386454472519</td>
+</tr>
+<tr>
+  <td id="tableHTML_rownames">4</td>
+  <td id="tableHTML_column_1">4</td>
+  <td id="tableHTML_column_2">0.0030748656641527</td>
+</tr>
+<tr>
+  <td id="tableHTML_rownames">5</td>
+  <td id="tableHTML_column_1">5</td>
+  <td id="tableHTML_column_2">0.00497528640093208</td>
+</tr>
+</tbody>
+</table>
