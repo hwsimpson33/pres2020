@@ -6,13 +6,17 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-##ToDo: combine ad data by day, subtract to get difference. normalize ad and tv data. plot a nice colored line graph with all three. run dw tests on all (hopefully no significance!). try granger test. make a table w results. do a nice writeup (focus on polisci/ why causation is interesting angles) and comment code. total time: 4 hours
 
 rm(list = ls())
 
 knitr::opts_chunk$set(echo = TRUE)
 
+library(lmtest)
 library(tidyverse)
+library(kableExtra)
+library(tableHTML)
+
+#Stanford TV data link: https://tvnews.stanford[.]edu/?dataVersion=v1&data=eyJvcHRpb25zIjp7InN0YXJ0X2RhdGUiOiIyMDExLTAxLTE3IiwiZW5kX2RhdGUiOiIyMDEyLTExLTA2IiwiYWdncmVnYXRlIjoiZGF5In0sInF1ZXJpZXMiOlt7ImNvbG9yIjoiI0UxNTc1OSIsInRleHQiOiJ0ZXh0PVwiT2JhbWFcIiJ9LHsiY29sb3IiOiIjRjI4RTJCIiwidGV4dCI6InRleHQ9XCJSb21uZXlcIiJ9XX0
 
 ads.campaigns <- read_csv("./ad_campaigns_2000-2012.csv")
 ads.creative <- read_csv("./ad_creative_2000-2012.csv")
@@ -20,66 +24,193 @@ tv.news.raw <- read_csv("./tvnews_20201010031224.csv")
 ```
 
 
-```{r}
-#clean and merge data
+```{r data.clean}
+
+#wrangle ads data
+#impute n/as as zero
 #range -1 to 1, positive = good for dems
 ads.data <- ads.campaigns %>% 
-  filter(cycle == 2012) %>% 
+  filter(cycle == 2012) %>% #only election we have all data for
   rename(date = air_date) %>% 
-  arrange(date, party) %>% 
+  arrange(date, party) %>% #for visual check
   group_by(date, party) %>% 
   mutate(day.sum = sum(total_cost)) %>% 
-  select(party, date, day.sum) %>% 
+  dplyr::select(party, date, day.sum) %>% #not sure why select was throwing an error, but this fixes it
   distinct() %>% 
-  pivot_wider(names_from = party, values_from = day.sum) %>% 
-  mutate(democrat = case_when(is.na(democrat) ~ 0,
+  pivot_wider(names_from = party, values_from = day.sum) %>% #spread doesn't work anymore!
+  mutate(democrat = case_when(is.na(democrat) ~ 0, #N/A means they didn't spend money that day, set to 0
                               !is.na(democrat) ~ democrat),
          republican = case_when(is.na(republican) ~ 0,
                                 !is.na(republican) ~ republican)) %>% 
-  mutate(d.ads.lead = (democrat - republican) / (democrat + republican)) %>% 
-  select(-democrat, -republican)
+  mutate(d.ads.lead = (democrat - republican) / (democrat + republican)) %>% #normalize
+  dplyr::select(-democrat, -republican) #if you don't get rid of these columns, merge won't work
 
+#wrangle polling data
+#impute missing data by taking the value from the day before
 #range -1.295 to 3.984, positive = good for dems
 nat.poll.data <- read_csv("./pollavg_1968-2016.csv") %>% 
   filter(year == "2012") %>% 
   rename(date = poll_date) %>% 
-  select(-candidate_name, -before_convention) %>% #otherwise the spread won't match them up
+  dplyr::select(-candidate_name, -before_convention) %>% #otherwise the spread won't match them up
   group_by(date) %>% 
+  arrange(date) %>% #just in case - for when we ungroup them
+  ungroup() %>% #so that dplyr::lag will work
   spread(key = party, value = avg_support) %>% 
-  filter(!is.na(democrat), !is.na(republican)) %>% #we lose about 40 obs for both
-  mutate(d.poll.lead = democrat - republican) %>% 
-  select(-democrat, -republican)
+  mutate(democrat = case_when(is.na(democrat) ~ dplyr::lag(democrat), #this is a little hacky but it works
+                              !is.na(democrat) ~ democrat))%>% #if you have two n/as, run it twice!
+  mutate(republican = case_when(is.na(republican) ~ dplyr::lag(republican), 
+                              !is.na(republican) ~ republican)) %>% 
+  mutate(d.poll.lead = democrat - republican) %>%
+  dplyr::select(-democrat, -republican) #for merging
   
 
+#wrangle tv news data
+#no missing data!
 #range is -1 to 1, positive is good for dems
 tv.news <- tv.news.raw %>% pivot_wider(names_from = Query, values_from = Value) %>% 
-  select(-Unit) %>% 
-  rename(obama = "text=\"Obama\"", romney = "text=\"Romney\"", date = Time) %>% 
-  mutate(d.news.lead = (obama - romney) / (obama + romney)) %>% 
-  select(-obama, -romney)
+  dplyr::select(-Unit) %>% 
+  rename(obama = "text=\"Obama\"", romney = "text=\"Romney\"", date = Time) %>% #escape characters
+  mutate(d.news.lead = (obama - romney) / (obama + romney)) %>% #normalize
+  dplyr::select(-obama, -romney) #for merging
 
+#merge datasets
 time.data <- merge(ads.data, nat.poll.data, all = TRUE)
 time.data <- merge(time.data, tv.news, all = TRUE)
 
-#imputing missing data
-#putting a second mutate in there is a little hacky, but it works ::shrug::
-time.data <- time.data %>% mutate(d.poll.lead = case_when(is.na(d.poll.lead) ~ dplyr::lag(d.poll.lead), 
-                                 !is.na(d.poll.lead) ~ d.poll.lead)) %>% 
-  mutate(d.poll.lead = case_when(is.na(d.poll.lead) ~ dplyr::lag(d.poll.lead),
-                                 !is.na(d.poll.lead) ~ d.poll.lead))
-
-time.data <- time.data %>% filter(date >= as.Date("2012-03-25"), date < as.Date("2012-11-06"))
+#limit time frame
+time.data <- time.data %>% filter(date >= base::as.Date("2012-04-25"), date < base::as.Date("2012-11-06"))
 
 #we're going to look at the 2012 election. ad data range == 2011-01-17 to 2012-11-06; poll date range == 2012-03-01 to 2012-11-05; we'll pull Stanford data from the wider range, but plan to look at the narrower range.
-#Stanford TV data link: https://tvnews.stanford[.]edu/?dataVersion=v1&data=eyJvcHRpb25zIjp7InN0YXJ0X2RhdGUiOiIyMDExLTAxLTE3IiwiZW5kX2RhdGUiOiIyMDEyLTExLTA2IiwiYWdncmVnYXRlIjoiZGF5In0sInF1ZXJpZXMiOlt7ImNvbG9yIjoiI0UxNTc1OSIsInRleHQiOiJ0ZXh0PVwiT2JhbWFcIiJ9LHsiY29sb3IiOiIjRjI4RTJCIiwidGV4dCI6InRleHQ9XCJSb21uZXlcIiJ9XX0
-#we will limit all data to after 2012-04-25, when the RNC declared Romney the presumptive nominee
+#we will limit all data to after 2012-04-25, when the RNC declared Romney the presumptive nominee -- otherwise we have various random republicans advertising
 ```
 
-```{r}
+```{r dw}
+#dw tests and plots
+
+#ad residuals are strongly + significantly negatively autocorrelated
+ads.model <- lm(d.ads.lead ~ date, data = time.data)
+dwtest(ads.model, alternative = c("two.sided"))
+
+#stanford blue
+# ads.plot <- time.data %>% ggplot(aes(x = date, y = d.ads.lead)) + geom_line(color = "#4E79A7") + geom_smooth(method = "lm", color = "#4E79A7", fill = "#E1E1E1") + theme_classic() + labs(title = "Ad Advantage over Time")
+# ads.plot
+
+#blog blue
+ads.plot <- time.data %>% ggplot(aes(x = date, y = d.ads.lead)) + geom_line(color = "#277CB9") + geom_smooth(method = "lm", color = "#277CB9", fill = "#B8B8B8") + theme_classic() + labs(title = "Ad Advantage over Time")
+ads.plot
+
+#news residuals are strongly + significantly negatively autocorrelated
+news.model <- lm(d.news.lead ~ date, data = time.data)
+dwtest(news.model, alternative = c("two.sided"))
+
+news.plot <- time.data %>% ggplot(aes(x = date, y = d.news.lead)) + geom_line(color = "#E15759") + geom_smooth(method = "lm", color = "#E15759", fill = "#B8B8B8") + theme_classic() + labs(title = "News Advantage over Time")
+news.plot
+
+#poll residuals are really really strongly + significantly negatively autocorrelated
+poll.model <- lm(d.poll.lead ~ date, data = time.data)
+dwtest(poll.model, alternative = c("two.sided"))
+
+poll.plot <- time.data %>% ggplot(aes(x = date, y = d.poll.lead)) + geom_line(color = "#F38F31") + geom_smooth(method = "lm", color = "#F38F31", fill = "#B8B8B8") + theme_classic() + labs(title = "Poll Advantage over Time")
+poll.plot
 ```
 
-```{r}
+```{r other.models}
+#let's try some other model specifications
+model.1 <- lm(d.poll.lead ~ d.news.lead + d.ads.lead + date, data = time.data)
+dwtest(model.1, alternative = c("two.sided"))
 
+model.2 <- lm(d.news.lead ~ d.poll.lead + d.ads.lead + date, data = time.data)
+dwtest(model.2, alternative = c("two.sided"))
+
+model.3 <- lm(d.news.lead ~ d.ads.lead + date, data = time.data)
+dwtest(model.3, alternative = c("two.sided"))
+
+#basic correlation
+cor.test(time.data$d.poll.lead, time.data$d.news.lead) #significant, negative, -0.15 -- greater lead for Obama, less coverage for Obama
+cor.test(time.data$d.poll.lead, time.data$d.ads.lead) #not significant, negative, small
+cor.test(time.data$d.news.lead, time.data$d.ads.lead) #not significant, positive, small
+```
+
+
+```{r exciting.granger}
+#news -> polls
+
+granger.1 <- grangertest(d.poll.lead ~ d.news.lead, order = 1, data = time.data) #p = 0.04*
+granger.2 <- grangertest(d.poll.lead ~ d.news.lead, order = 2, data = time.data) #p = 0.0004***
+granger.3 <- grangertest(d.poll.lead ~ d.news.lead, order = 3, data = time.data) #p = 0.01**
+granger.4 <- grangertest(d.poll.lead ~ d.news.lead, order = 4, data = time.data) #p = 0.003*
+granger.5 <- grangertest(d.poll.lead ~ d.news.lead, order = 5, data = time.data) #p = 0.004**
+
+granger.results <- data.frame(order = c(1,2,3,4,5), 
+                              p.value = c(granger.1[2,4], 
+                                          granger.2[2,4], 
+                                          granger.3[2,4], 
+                                          granger.4[2,4], 
+                                          granger.5[2,4]))
+
+#collect your table in the output and copy/paste to .md file
+my.table <- tableHTML(granger.results, rownames = FALSE, border = 1.5, round = 4)
+print(my.table, viewer = FALSE)
+```
+
+```{r granger.robustness}
+#test robustness of Granger test to consistent scales b/t news lead and poll lead (b/c both are percentages, but poll lead varies b/t -1 and 4%, whereas news lead goes from more like -100 to 100)
+time.data <- time.data %>% mutate(my.d.news.lead = d.news.lead * 100)
+
+grangertest(d.poll.lead ~ my.d.news.lead, order = 1, data = time.data) #0.01**
+grangertest(d.poll.lead ~ my.d.news.lead, order = 2, data = time.data) #0.002**
+grangertest(d.poll.lead ~ my.d.news.lead, order = 3, data = time.data) #0.024*
+grangertest(d.poll.lead ~ my.d.news.lead, order = 4, data = time.data) #0.019*
+grangertest(d.poll.lead ~ my.d.news.lead, order = 5, data = time.data) #0.040*
+```
+
+
+
+```{r other.granger}
+
+#polls -> news
+grangertest(d.news.lead ~ d.poll.lead, order = 1, data = time.data) #p = 0.10
+grangertest(d.news.lead ~ d.poll.lead, order = 2, data = time.data) #p = 0.26
+grangertest(d.news.lead ~ d.poll.lead, order = 3, data = time.data) #p = 0.16
+grangertest(d.news.lead ~ d.poll.lead, order = 4, data = time.data) #p = 0.12
+grangertest(d.news.lead ~ d.poll.lead, order = 5, data = time.data) #p = 0.09
+
+#news -> ads
+grangertest(d.ads.lead ~ d.news.lead, order = 1, data = time.data) #p = 0.88
+grangertest(d.ads.lead ~ d.news.lead, order = 2, data = time.data) #p = 0.29
+grangertest(d.ads.lead ~ d.news.lead, order = 3, data = time.data) #p = 0.24
+
+#ads -> news
+grangertest(d.news.lead ~ d.ads.lead, order = 1, data = time.data) #p = 0.23
+grangertest(d.news.lead ~ d.ads.lead, order = 2, data = time.data) #p = 0.10
+grangertest(d.news.lead ~ d.ads.lead, order = 3, data = time.data) #p = 0.15
+
+#poll -> ads
+grangertest(d.ads.lead ~ d.poll.lead, order = 1, data = time.data) #p = 0.77
+grangertest(d.ads.lead ~ d.poll.lead, order = 2, data = time.data) #p = 0.30
+grangertest(d.ads.lead ~ d.poll.lead, order = 3, data = time.data) #p = 0.40
+
+#polls -> ads
+grangertest(d.poll.lead ~ d.ads.lead, order = 1, data = time.data) #p = 0.76
+grangertest(d.poll.lead ~ d.ads.lead, order = 2, data = time.data) #p = 0.21
+grangertest(d.poll.lead ~ d.ads.lead, order = 3, data = time.data) #p = 0.49
+
+```
+
+```{r nice.plot}
+#plot all three time series on the same graph
+
+#color scheme stolen from Stanford tv news: blue = #4E79A7, orange = #F38F31, red = #E15759, turquoise = #77B8B2, green = #59A14F, yellow = #EDC948, pink = #F29BA7
+
+#i think it's better to keep the y axis consistent, even though the polling line is not very interesting
+time.plot <- time.data %>% ggplot() + 
+  geom_line(aes(x = date, y = d.ads.lead*100), color = "#277CB9") + #blog blue(not as nice but consistent)
+  geom_line(aes(x = date, y = d.news.lead*100), color = "#E15759") + #red
+  geom_line(aes(x = date, y = d.poll.lead), color = "#F38F31") + #orange
+  theme_classic() + theme(axis.line = element_line(colour = "#E1E1E1")) +
+  labs(title = "The 2012 Race as Seen on TV", subtitle = "Blue = % Ad Advantage, Red = % Cable News Mentions Advantage, Orange = % Advantage in Polls", x = "2012", y = "Percent Advantage for Democrat")
+time.plot
+ggsave("docs/images/time_plot.png", plot = time.plot, height = 4.5, width = 7.5)
 ```
 
 

@@ -11,6 +11,8 @@ This research project would be interesting and (I believe) viable, but it would 
 
 [Click here to see full-size image.](https://hwsimpson33.github.io/pres2020/images/time_plot.png)
 
+Next, I 
+
 <table style="border-collapse:collapse;" class=table_4430 border=1>
 <thead>
 <tr>
