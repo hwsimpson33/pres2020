@@ -16,11 +16,30 @@ library(tidyverse)
 
 ads.campaigns <- read_csv("./ad_campaigns_2000-2012.csv")
 ads.creative <- read_csv("./ad_creative_2000-2012.csv")
+tv.news.raw <- read_csv("./tvnews_20201010031224.csv")
+```
 
-ads.data <- merge(ads.campaigns, ads.creative, all = TRUE) %>% 
+
+```{r}
+#clean and merge data
+#range -1 to 1, positive = good for dems
+ads.data <- ads.campaigns %>% 
   filter(cycle == 2012) %>% 
-  rename(date = air_date)
+  rename(date = air_date) %>% 
+  arrange(date, party) %>% 
+  group_by(date, party) %>% 
+  mutate(day.sum = sum(total_cost)) %>% 
+  select(party, date, day.sum) %>% 
+  distinct() %>% 
+  pivot_wider(names_from = party, values_from = day.sum) %>% 
+  mutate(democrat = case_when(is.na(democrat) ~ 0,
+                              !is.na(democrat) ~ democrat),
+         republican = case_when(is.na(republican) ~ 0,
+                                !is.na(republican) ~ republican)) %>% 
+  mutate(d.ads.lead = (democrat - republican) / (democrat + republican)) %>% 
+  select(-democrat, -republican)
 
+#range -1.295 to 3.984, positive = good for dems
 nat.poll.data <- read_csv("./pollavg_1968-2016.csv") %>% 
   filter(year == "2012") %>% 
   rename(date = poll_date) %>% 
@@ -28,24 +47,39 @@ nat.poll.data <- read_csv("./pollavg_1968-2016.csv") %>%
   group_by(date) %>% 
   spread(key = party, value = avg_support) %>% 
   filter(!is.na(democrat), !is.na(republican)) %>% #we lose about 40 obs for both
-  mutate(d.poll.lead = democrat - republican)
+  mutate(d.poll.lead = democrat - republican) %>% 
+  select(-democrat, -republican)
+  
 
-tv.news <- read_csv("./tvnews_20201010031224.csv")
-
-tv.news <- tv.news %>% pivot_wider(names_from = Query, values_from = Value) %>% 
+#range is -1 to 1, positive is good for dems
+tv.news <- tv.news.raw %>% pivot_wider(names_from = Query, values_from = Value) %>% 
   select(-Unit) %>% 
   rename(obama = "text=\"Obama\"", romney = "text=\"Romney\"", date = Time) %>% 
-  mutate(d.news.lead = obama - romney)
+  mutate(d.news.lead = (obama - romney) / (obama + romney)) %>% 
+  select(-obama, -romney)
 
 time.data <- merge(ads.data, nat.poll.data, all = TRUE)
 time.data <- merge(time.data, tv.news, all = TRUE)
 
+#imputing missing data
+#putting a second mutate in there is a little hacky, but it works ::shrug::
+time.data <- time.data %>% mutate(d.poll.lead = case_when(is.na(d.poll.lead) ~ dplyr::lag(d.poll.lead), 
+                                 !is.na(d.poll.lead) ~ d.poll.lead)) %>% 
+  mutate(d.poll.lead = case_when(is.na(d.poll.lead) ~ dplyr::lag(d.poll.lead),
+                                 !is.na(d.poll.lead) ~ d.poll.lead))
+
+time.data <- time.data %>% filter(date >= as.Date("2012-03-25"), date < as.Date("2012-11-06"))
+
 #we're going to look at the 2012 election. ad data range == 2011-01-17 to 2012-11-06; poll date range == 2012-03-01 to 2012-11-05; we'll pull Stanford data from the wider range, but plan to look at the narrower range.
 #Stanford TV data link: https://tvnews.stanford[.]edu/?dataVersion=v1&data=eyJvcHRpb25zIjp7InN0YXJ0X2RhdGUiOiIyMDExLTAxLTE3IiwiZW5kX2RhdGUiOiIyMDEyLTExLTA2IiwiYWdncmVnYXRlIjoiZGF5In0sInF1ZXJpZXMiOlt7ImNvbG9yIjoiI0UxNTc1OSIsInRleHQiOiJ0ZXh0PVwiT2JhbWFcIiJ9LHsiY29sb3IiOiIjRjI4RTJCIiwidGV4dCI6InRleHQ9XCJSb21uZXlcIiJ9XX0
+#we will limit all data to after 2012-04-25, when the RNC declared Romney the presumptive nominee
+```
+
+```{r}
 ```
 
 ```{r}
 
-
 ```
+
 
