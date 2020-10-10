@@ -1,0 +1,51 @@
+---
+title: "section5"
+author: "Helen Simpson"
+date: "10/6/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+##ToDo: combine ad data by day, subtract to get difference. normalize ad and tv data. plot a nice colored line graph with all three. run dw tests on all (hopefully no significance!). try granger test. make a table w results. do a nice writeup (focus on polisci/ why causation is interesting angles) and comment code. total time: 4 hours
+
+rm(list = ls())
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+
+ads.campaigns <- read_csv("./ad_campaigns_2000-2012.csv")
+ads.creative <- read_csv("./ad_creative_2000-2012.csv")
+
+ads.data <- merge(ads.campaigns, ads.creative, all = TRUE) %>% 
+  filter(cycle == 2012) %>% 
+  rename(date = air_date)
+
+nat.poll.data <- read_csv("./pollavg_1968-2016.csv") %>% 
+  filter(year == "2012") %>% 
+  rename(date = poll_date) %>% 
+  select(-candidate_name, -before_convention) %>% #otherwise the spread won't match them up
+  group_by(date) %>% 
+  spread(key = party, value = avg_support) %>% 
+  filter(!is.na(democrat), !is.na(republican)) %>% #we lose about 40 obs for both
+  mutate(d.poll.lead = democrat - republican)
+
+tv.news <- read_csv("./tvnews_20201010031224.csv")
+
+tv.news <- tv.news %>% pivot_wider(names_from = Query, values_from = Value) %>% 
+  select(-Unit) %>% 
+  rename(obama = "text=\"Obama\"", romney = "text=\"Romney\"", date = Time) %>% 
+  mutate(d.news.lead = obama - romney)
+
+time.data <- merge(ads.data, nat.poll.data, all = TRUE)
+time.data <- merge(time.data, tv.news, all = TRUE)
+
+#we're going to look at the 2012 election. ad data range == 2011-01-17 to 2012-11-06; poll date range == 2012-03-01 to 2012-11-05; we'll pull Stanford data from the wider range, but plan to look at the narrower range.
+#Stanford TV data link: https://tvnews.stanford[.]edu/?dataVersion=v1&data=eyJvcHRpb25zIjp7InN0YXJ0X2RhdGUiOiIyMDExLTAxLTE3IiwiZW5kX2RhdGUiOiIyMDEyLTExLTA2IiwiYWdncmVnYXRlIjoiZGF5In0sInF1ZXJpZXMiOlt7ImNvbG9yIjoiI0UxNTc1OSIsInRleHQiOiJ0ZXh0PVwiT2JhbWFcIiJ9LHsiY29sb3IiOiIjRjI4RTJCIiwidGV4dCI6InRleHQ9XCJSb21uZXlcIiJ9XX0
+```
+
+```{r}
+
+
+```
+
