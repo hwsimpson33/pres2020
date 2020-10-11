@@ -21,6 +21,8 @@ library(tableHTML)
 ads.campaigns <- read_csv("./ad_campaigns_2000-2012.csv")
 ads.creative <- read_csv("./ad_creative_2000-2012.csv")
 tv.news.raw <- read_csv("./tvnews_20201010031224.csv")
+
+#ToDo: extend to 2016, get ad topics data from Stanford news website, check and see if cumulative nature of polls vs. non-cumulative nature of other datasets matters
 ```
 
 
@@ -80,6 +82,14 @@ time.data <- merge(time.data, tv.news, all = TRUE)
 #limit time frame
 time.data <- time.data %>% filter(date >= base::as.Date("2012-04-25"), date < base::as.Date("2012-11-06"))
 
+#impute N/As AGAIN --
+#putting a second mutate in there is a little hacky, but it works ::shrug::
+time.data <- time.data %>% mutate(d.poll.lead = case_when(is.na(d.poll.lead) ~ dplyr::lag(d.poll.lead), 
+                                 !is.na(d.poll.lead) ~ d.poll.lead)) %>% 
+  mutate(d.poll.lead = case_when(is.na(d.poll.lead) ~ dplyr::lag(d.poll.lead),
+                                 !is.na(d.poll.lead) ~ d.poll.lead))
+  
+
 #we're going to look at the 2012 election. ad data range == 2011-01-17 to 2012-11-06; poll date range == 2012-03-01 to 2012-11-05; we'll pull Stanford data from the wider range, but plan to look at the narrower range.
 #we will limit all data to after 2012-04-25, when the RNC declared Romney the presumptive nominee -- otherwise we have various random republicans advertising
 ```
@@ -112,6 +122,7 @@ dwtest(poll.model, alternative = c("two.sided"))
 
 poll.plot <- time.data %>% ggplot(aes(x = date, y = d.poll.lead)) + geom_line(color = "#F38F31") + geom_smooth(method = "lm", color = "#F38F31", fill = "#B8B8B8") + theme_classic() + labs(title = "Poll Advantage over Time")
 poll.plot
+
 ```
 
 ```{r other.models}
@@ -133,8 +144,8 @@ cor.test(time.data$d.news.lead, time.data$d.ads.lead) #not significant, positive
 
 
 ```{r exciting.granger}
-#news -> polls
 
+#news -> polls
 granger.1 <- grangertest(d.poll.lead ~ d.news.lead, order = 1, data = time.data) #p = 0.04*
 granger.2 <- grangertest(d.poll.lead ~ d.news.lead, order = 2, data = time.data) #p = 0.0004***
 granger.3 <- grangertest(d.poll.lead ~ d.news.lead, order = 3, data = time.data) #p = 0.01**
@@ -208,9 +219,20 @@ time.plot <- time.data %>% ggplot() +
   geom_line(aes(x = date, y = d.news.lead*100), color = "#E15759") + #red
   geom_line(aes(x = date, y = d.poll.lead), color = "#F38F31") + #orange
   theme_classic() + theme(axis.line = element_line(colour = "#E1E1E1")) +
-  labs(title = "The 2012 Race as Seen on TV", subtitle = "Blue = % Ad Advantage, Red = % Cable News Mentions Advantage, Orange = % Advantage in Polls", x = "2012", y = "Percent Advantage for Democrat")
+  labs(title = "The 2012 race: as seen on TV", subtitle = "Blue = % ad advantage, Red = % cable news mentions advantage, Orange = % lead in polls", x = "2012", y = "Percent advantage for Democrat")
 time.plot
 ggsave("docs/images/time_plot.png", plot = time.plot, height = 4.5, width = 7.5)
+
+#plot polling and news only, not scaled correctly
+poll.news.time.plot <- time.data %>% ggplot() + 
+  geom_line(aes(x = date, y = d.news.lead), color = "#E15759") + #red
+  geom_line(aes(x = date, y = d.poll.lead), color = "#F38F31") + #orange
+  theme_classic() + theme(axis.line = element_line(colour = "#E1E1E1")) +
+  labs(title = "Does news coverage drive polling?", subtitle = "Red = % cable news mentions advantage (divided by 100 for readabilty), Orange = % lead in polls", x = "2012", y = "Percent Advantage for Democrat") +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b") +
+  geom_hline(yintercept = 0, alpha = 0.8, linetype = "dotted")
+poll.news.time.plot
+ggsave("docs/images/poll_news_time_plot.png", plot = poll.news.time.plot, height = 4.5, width = 7.5)
 ```
 
 
