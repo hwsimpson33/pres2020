@@ -20,8 +20,8 @@ The only ordered pair of variables to show significant results was news advantag
 <table style="border-collapse:collapse;" class=table_8528 border=2>
 <thead>
 <tr>
-  <th id="tableHTML_header_1">Lag.order</th>
-  <th id="tableHTML_header_2">p.Value</th>
+  <th id="tableHTML_header_1">Lag order</th>
+  <th id="tableHTML_header_2">p Value</th>
 </tr>
 </thead>
 <tbody>
