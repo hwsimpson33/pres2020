@@ -171,8 +171,8 @@ granger.3 <- grangertest(d.poll.lead ~ my.d.news.lead, order = 3, data = time.da
 granger.4 <- grangertest(d.poll.lead ~ my.d.news.lead, order = 4, data = time.data) #0.019*
 granger.5 <- grangertest(d.poll.lead ~ my.d.news.lead, order = 5, data = time.data) #0.040*
 
-granger.results <- data.frame(order = c(1,2,3,4,5), 
-                              p.value = c(granger.1[2,4], 
+granger.results <- data.frame(`Lag order` = c(1,2,3,4,5), 
+                              `p Value` = c(granger.1[2,4], 
                                           granger.2[2,4], 
                                           granger.3[2,4], 
                                           granger.4[2,4], 

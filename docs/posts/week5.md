@@ -1,5 +1,5 @@
-## Federal grants and presidential campaigns
-### October 3, 2020
+## As seen on TV: ads, cable news, and polling during the 2012 presidential race
+### October 10, 2020
 
 [Back to main page](https://hwsimpson33.github.io/pres2020/)
 
@@ -17,11 +17,11 @@ Next, I ran a series of [Granger causality tests](https://en.wikipedia.org/wiki/
 
 The only ordered pair of variables to show significant results was news advantage used to predict poll advantage. The results were significant at every lag order I tried (if I understand it right, when a time series is autocorrelated or not stationary, using higher-order lags allows you to correct for bias). According to [StackExchange](https://stats.stackexchange.com/questions/107954/lag-order-for-granger-causality-test), you should use AIC and/or BIC to pick between different lag orders, but I couldn't figure out how to calculate them, so several lags are shown below. All the lag orders I tried for this test were significant, however.
 
-<table style="border-collapse:collapse;" class=table_9650 border=2>
+<table style="border-collapse:collapse;" class=table_8528 border=2>
 <thead>
 <tr>
-  <th id="tableHTML_header_1">order</th>
-  <th id="tableHTML_header_2">p.value</th>
+  <th id="tableHTML_header_1">Lag.order</th>
+  <th id="tableHTML_header_2">p.Value</th>
 </tr>
 </thead>
 <tbody>
@@ -59,4 +59,6 @@ Finally, I decided to take a closer look at the raw data on poll advantage and T
 [Click here to see full-size image.](https://hwsimpson33.github.io/pres2020/images/poll_news_time_plot.png)
 
 There are lots of other angles to explore on this project. In addition to my original idea (testing each advertising topic against news for that topic), it would also be interesting to test the candidates separately, see if the cable news and polling pattern holds in 2016 (there is no ad data for 2016, but we do have both polling and news data), and explore cumulative measures of ad spending and news coverage as well as absolute measures. I hope I will have the opportunity to explore some of these questions in future weeks. 
+
+[Back to main page](https://hwsimpson33.github.io/pres2020/)
 
