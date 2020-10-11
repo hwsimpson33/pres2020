@@ -22,7 +22,7 @@ ads.campaigns <- read_csv("./ad_campaigns_2000-2012.csv")
 ads.creative <- read_csv("./ad_creative_2000-2012.csv")
 tv.news.raw <- read_csv("./tvnews_20201010031224.csv")
 
-#ToDo: extend to 2016, get ad topics data from Stanford news website, check and see if cumulative nature of polls vs. non-cumulative nature of other datasets matters
+#ToDo: extend to 2016, get ad topics data from Stanford news website, check and see if cumulative nature of polls vs. non-cumulative nature of other datasets matters, disaggregate candidates
 ```
 
 
@@ -106,22 +106,31 @@ dwtest(ads.model, alternative = c("two.sided"))
 # ads.plot
 
 #blog blue
-ads.plot <- time.data %>% ggplot(aes(x = date, y = d.ads.lead)) + geom_line(color = "#277CB9") + geom_smooth(method = "lm", color = "#277CB9", fill = "#B8B8B8") + theme_classic() + labs(title = "Ad Advantage over Time")
+ads.plot <- time.data %>% ggplot(aes(x = date, y = d.ads.lead)) + geom_line(color = "#277CB9") + geom_smooth(method = "lm", color = "#277CB9", fill = "#B8B8B8") + theme_classic() + 
+  labs(title = "Ad Advantage over Time", x = "2012", y = "% Ad Spending Advantage for Obama") +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b")
 ads.plot
+ggsave("docs/images/ads_time_plot.png", plot = ads.plot, height = 4.5, width = 7.5)
 
 #news residuals are strongly + significantly negatively autocorrelated
 news.model <- lm(d.news.lead ~ date, data = time.data)
 dwtest(news.model, alternative = c("two.sided"))
 
-news.plot <- time.data %>% ggplot(aes(x = date, y = d.news.lead)) + geom_line(color = "#E15759") + geom_smooth(method = "lm", color = "#E15759", fill = "#B8B8B8") + theme_classic() + labs(title = "News Advantage over Time")
+news.plot <- time.data %>% ggplot(aes(x = date, y = d.news.lead)) + geom_line(color = "#E15759") + geom_smooth(method = "lm", color = "#E15759", fill = "#B8B8B8") + theme_classic() + 
+  labs(title = "Cable News Mentions Advantage over Time", x = "2012", y = "% News Mentions Advantage for Obama") +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b")
 news.plot
+ggsave("docs/images/news_time_plot.png", plot = news.plot, height = 4.5, width = 7.5)
 
 #poll residuals are really really strongly + significantly negatively autocorrelated
 poll.model <- lm(d.poll.lead ~ date, data = time.data)
 dwtest(poll.model, alternative = c("two.sided"))
 
-poll.plot <- time.data %>% ggplot(aes(x = date, y = d.poll.lead)) + geom_line(color = "#F38F31") + geom_smooth(method = "lm", color = "#F38F31", fill = "#B8B8B8") + theme_classic() + labs(title = "Poll Advantage over Time")
+poll.plot <- time.data %>% ggplot(aes(x = date, y = d.poll.lead)) + geom_line(color = "#F38F31") + geom_smooth(method = "lm", color = "#F38F31", fill = "#B8B8B8") + theme_classic() + 
+  labs(title = "Poll Advantage over Time", x = "2012", y = "% Polling Lead for Obama") +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b")
 poll.plot
+ggsave("docs/images/poll_time_plot.png", plot = poll.plot, height = 4.5, width = 7.5)
 
 ```
 
@@ -145,12 +154,22 @@ cor.test(time.data$d.news.lead, time.data$d.ads.lead) #not significant, positive
 
 ```{r exciting.granger}
 
-#news -> polls
-granger.1 <- grangertest(d.poll.lead ~ d.news.lead, order = 1, data = time.data) #p = 0.04*
-granger.2 <- grangertest(d.poll.lead ~ d.news.lead, order = 2, data = time.data) #p = 0.0004***
-granger.3 <- grangertest(d.poll.lead ~ d.news.lead, order = 3, data = time.data) #p = 0.01**
-granger.4 <- grangertest(d.poll.lead ~ d.news.lead, order = 4, data = time.data) #p = 0.003*
-granger.5 <- grangertest(d.poll.lead ~ d.news.lead, order = 5, data = time.data) #p = 0.004**
+#news -> polls - different scaling
+grangertest(d.poll.lead ~ d.news.lead, order = 1, data = time.data) #p = 0.04*
+grangertest(d.poll.lead ~ d.news.lead, order = 2, data = time.data) #p = 0.0004***
+grangertest(d.poll.lead ~ d.news.lead, order = 3, data = time.data) #p = 0.01**
+grangertest(d.poll.lead ~ d.news.lead, order = 4, data = time.data) #p = 0.003*
+grangertest(d.poll.lead ~ d.news.lead, order = 5, data = time.data) #p = 0.004**
+
+#news -> polls - same scaling (better to be consistent I think)
+#test robustness of Granger test to consistent scales b/t news lead and poll lead (b/c both are percentages, but poll lead varies b/t -1 and 4%, whereas news lead goes from more like -100 to 100)
+time.data <- time.data %>% mutate(my.d.news.lead = d.news.lead * 100)
+
+granger.1 <- grangertest(d.poll.lead ~ my.d.news.lead, order = 1, data = time.data) #0.01**
+granger.2 <- grangertest(d.poll.lead ~ my.d.news.lead, order = 2, data = time.data) #0.002**
+granger.3 <- grangertest(d.poll.lead ~ my.d.news.lead, order = 3, data = time.data) #0.024*
+granger.4 <- grangertest(d.poll.lead ~ my.d.news.lead, order = 4, data = time.data) #0.019*
+granger.5 <- grangertest(d.poll.lead ~ my.d.news.lead, order = 5, data = time.data) #0.040*
 
 granger.results <- data.frame(order = c(1,2,3,4,5), 
                               p.value = c(granger.1[2,4], 
@@ -160,19 +179,8 @@ granger.results <- data.frame(order = c(1,2,3,4,5),
                                           granger.5[2,4]))
 
 #collect your table in the output and copy/paste to .md file
-my.table <- tableHTML(granger.results, rownames = FALSE, border = 1.5, round = 4)
+my.table <- tableHTML(granger.results, rownames = FALSE, border = 2, round = 4)
 print(my.table, viewer = FALSE)
-```
-
-```{r granger.robustness}
-#test robustness of Granger test to consistent scales b/t news lead and poll lead (b/c both are percentages, but poll lead varies b/t -1 and 4%, whereas news lead goes from more like -100 to 100)
-time.data <- time.data %>% mutate(my.d.news.lead = d.news.lead * 100)
-
-grangertest(d.poll.lead ~ my.d.news.lead, order = 1, data = time.data) #0.01**
-grangertest(d.poll.lead ~ my.d.news.lead, order = 2, data = time.data) #0.002**
-grangertest(d.poll.lead ~ my.d.news.lead, order = 3, data = time.data) #0.024*
-grangertest(d.poll.lead ~ my.d.news.lead, order = 4, data = time.data) #0.019*
-grangertest(d.poll.lead ~ my.d.news.lead, order = 5, data = time.data) #0.040*
 ```
 
 
@@ -219,7 +227,8 @@ time.plot <- time.data %>% ggplot() +
   geom_line(aes(x = date, y = d.news.lead*100), color = "#E15759") + #red
   geom_line(aes(x = date, y = d.poll.lead), color = "#F38F31") + #orange
   theme_classic() + theme(axis.line = element_line(colour = "#E1E1E1")) +
-  labs(title = "The 2012 race: as seen on TV", subtitle = "Blue = % ad advantage, Red = % cable news mentions advantage, Orange = % lead in polls", x = "2012", y = "Percent advantage for Democrat")
+  labs(title = "The 2012 race: as seen on TV", subtitle = "Blue = % ad advantage, Red = % cable news mentions advantage, Orange = % lead in polls", x = "2012", y = "Percent advantage for Democrat") +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b")
 time.plot
 ggsave("docs/images/time_plot.png", plot = time.plot, height = 4.5, width = 7.5)
 
@@ -233,6 +242,16 @@ poll.news.time.plot <- time.data %>% ggplot() +
   geom_hline(yintercept = 0, alpha = 0.8, linetype = "dotted")
 poll.news.time.plot
 ggsave("docs/images/poll_news_time_plot.png", plot = poll.news.time.plot, height = 4.5, width = 7.5)
+```
+```{r full.news}
+
+full.news.plot <- tv.news %>% ggplot(aes(x = date, y = d.news.lead)) + geom_line(color = "#E15759") +
+  theme_classic() + 
+  labs(title = "Cable News Mentions Advantage over Time", x = "2011-2012", y = "% News Mentions Advantage for Obama") +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b")
+full.news.plot
+ggsave("docs/images/full_news_time_plot.png", plot = full.news.plot, height = 4.5, width = 7.5)
+
 ```
 
 
