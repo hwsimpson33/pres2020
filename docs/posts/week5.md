@@ -21,7 +21,7 @@ The only ordered pair of variables to show significant results was news advantag
 <thead>
 <tr>
   <th id="tableHTML_header_1">Lag order</th>
-  <th id="tableHTML_header_2">p Value</th>
+  <th id="tableHTML_header_2">p value</th>
 </tr>
 </thead>
 <tbody>
