@@ -12,26 +12,9 @@ rm(list = ls())
 knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
-library(usmap)
 
-field.offices <- read_csv("./fieldoffice_2012-2016_byaddress.csv")
 ```
 
 ```{r}
 
-clinton.data <- field.offices %>% filter(year == 2016, candidate == "Clinton") %>% group_by(state) %>% add_tally() %>% select(-state, -city, -latitude, -longitude, -full_address) %>% distinct()
-
-clinton.plot <- plot_usmap(data = clinton.data, regions = "states", values = "n") + scale_fill_continuous(low = "white", high = "blue")
-clinton.plot
-ggsave("./clinton_plot.png", plot = clinton.plot, height = 6, width = 14)
-
-
-trump.data <- field.offices %>% filter(year == 2016, candidate == "Trump") %>% 
-  group_by(state) %>% 
-  add_tally() %>% 
-  select(-state, -city, -latitude, -longitude, -full_address) %>% distinct()
-
-trump.plot <- plot_usmap(data = trump.data, regions = "states", values = "n") + scale_fill_continuous(low = "white", high = "red")
-trump.plot
-ggsave("./trump_plot.png", plot = trump.plot, height = 6, width = 14)
 ```
