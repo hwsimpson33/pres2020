@@ -13,6 +13,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(broom)
+library(rstanarm)
+library(stargazer)
 
 my.data <- read_csv("./all_data.csv")
 
@@ -32,11 +34,19 @@ test <- my.data %>%
 
 # my.test <- test %>% filter(term == "ave.3060")
 # hist(my.test$p.value)
+
 ```
 
 ```{r}
-#this is being shelved for another day. I don't want to figure this out right now.
-# my.model <- stan_lmer(R_pv2p ~ GDP_growth_qt + (1 + ave.030|state), data = all.data)
-# summary(my.model)
+#https://stats.stackexchange[.]com/questions/164457/r-glmer-warnings-model-fails-to-converge-model-is-nearly-unidentifiable
+#https://mc-stan[.]org/users/documentation/case-studies/tutorial_rstanarm.html#using-the-rstanarm-package
+my.model <- stan_lmer(R_pv2p ~ GDP_growth_qt + (1 + prev_Rvote|state), data = my.data)
+summary(my.model)
+
+my.data <- my.data %>% mutate(GDP_growth_qt = GDP_growth_qt * 50)
+
+my.like.model <- lmer(R_pv2p ~ GDP_growth_qt + inc.party + (1 + prev_Rvote + ave.30plus|state), data = my.data, REML = TRUE)
+summary(my.like.model)
+my.test <- data.frame(coef(my.like.model)$state[])
 ```
 

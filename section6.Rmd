@@ -12,9 +12,21 @@ rm(list = ls())
 knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
-
 ```
 
 ```{r}
+#it would have been nice to try out MRP. However, there doesn't seem be raw polling data (with respondents as observations) that I can download :(
+#https://today[.]yougov.com/topics/politics/trackers/presidential-voting-intention-2020 and this helpful guide https://web.archive.org/web/20190422085525/http://www.princeton[.]edu/~jkastell/MRP_primer/mrp_primer.pdf
+#instead, let's model turnout
+```
 
+```{r}
+town.data <- read_excel("./Turnout_Data_2012.xlsx", sheet = 4)
+my.town.data <- town.data %>% filter(!is.na(...2), ...2 == "CT") %>% mutate(dem = as.numeric(Democrat...14))
+my.plot <- my.town.data %>% ggplot(aes(x = dem, y = `%Turnout REG`, color = ...2)) + geom_point() + theme_classic() + scale_x_continuous() + geom_smooth(method = "lm")
+my.plot
+
+my.model <- lm(`%Turnout REG` ~ dem, data = my.town.data)
+summary(my.model)
+#as the percentage of registered dems increases, turnout goes down
 ```

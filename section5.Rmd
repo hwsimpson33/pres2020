@@ -253,5 +253,29 @@ full.news.plot
 ggsave("docs/images/full_news_time_plot.png", plot = full.news.plot, height = 4.5, width = 7.5)
 
 ```
+```{r}
+#just for fun
+polls.2020 <- read_csv("./polls_2020.csv") 
 
+my.polls.2020 <- polls.2020 %>% 
+  rename(date = end_date) %>% 
+  dplyr::select(date, pollster, candidate_name, pct) %>% #otherwise the spread won't match them up
+  filter(candidate_name == "Donald Trump" | candidate_name == "Joseph R. Biden Jr.") %>% 
+  group_by(date, candidate_name) %>% 
+  arrange(date, candidate_name) %>% 
+  mutate(day.ave = sum(pct)/length(pct)) %>% 
+  ungroup() %>% 
+  select(-pct, -pollster) %>% 
+  distinct() %>% 
+  pivot_wider(names_from = candidate_name, values_from = day.ave) %>% 
+  rename(trump = `Donald Trump`, biden = `Joseph R. Biden Jr.`) %>% 
+  mutate(biden = case_when(is.na(biden) ~ dplyr::lag(biden), #this is a little hacky but it works
+                              !is.na(biden) ~ biden))%>% #if you have two n/as, run it twice!
+  mutate(trump = case_when(is.na(trump) ~ dplyr::lag(trump), 
+                              !is.na(trump) ~ trump)) %>% 
+  mutate(d.poll.lead = biden - trump) %>% 
+  filter(!is.na(d.poll.lead)) %>%
+  dplyr::select(-biden, -trump) #for merging
 
+#if you want to go further with this you need a rolling average!
+```
