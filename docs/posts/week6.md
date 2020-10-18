@@ -31,7 +31,7 @@ This allocation depends on the partisan makeup of the state. In highly polarized
 These hypotheses could easily be tested with the right data. This is how I would set up my models: 
 
 ```
-% negative ads out of all ads = state expected vote margin * # of electoral votes + % voters registered to parties (to measure polarization) + demographic controls for the effectiveness of ads
+% negative ads out of all ads = state expected vote margin * # of electoral votes + % voters registered to parties + demographic controls for the effectiveness of ads
 
 number of offices in a state = state expected vote margin * # of electoral votes + % voters registered to parties + demographic controls for the effectiveness of offices
 ```
