@@ -1,5 +1,5 @@
-## As seen on TV: ads, cable news, and polling during the 2012 presidential race
-### October 10, 2020
+## How to buy votes: Lessons from clientelism on US campaign strategies
+### October 17, 2020
 
 [Back to main page](https://hwsimpson33.github.io/pres2020/)
 
