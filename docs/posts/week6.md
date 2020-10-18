@@ -22,7 +22,7 @@ This model contains several insights about the tradeoff between field offices an
 
 Gans-Morse et al. also present comparative statics on their model. Holding all else equal, they argue that this diagram represents the result of a shift to reduced salience of partisan preferences. In other words, if voters care less about who wins, the difference in turnout between highly partisan and indifferent voters decreases. There are proportionately more undecided voters willing to turn out, however. Gans-Morse et al. argue that this shift reduces the amount of turnout buying, abstention buying, and double persuasion. It increases the number of cheap, persuadable voters, however, who can be enticed using vote buying. In the American context, this shift translates to a reduction in partisanship, i.e. weaker partisan convictions among voters and less distance between party policy platforms. Holding everything else equal, then, making an American state less partisan should lead to an increase in persuasive ad buying.
 
-<img src = "../images/Gans-Morse_comparative-statics.png">
+<img src = "../images/Gans-Morse_comparative_statics.png">
 
 We can finally turn to modeling the tradeoff between ad buying and field offices in the US. Let's assume that presidential candidates are only considering their chances of winning the race when choosing where to locate their field offices (in reality, [they also consider](https://journals.sagepub.com/doi/abs/10.1177/1532673X13500520?journalCode=aprb) downballot races and laying the groundwork for future campaigns). They should focus their efforts on battleground states and states with a large number of electoral votes. The total budget for each state should be proportional to the product of the current expected win/ loss margin (the difference from 50%) and the number of electoral votes in a state. Determining the total budget for a state, however, should happen independently of deciding how to allocate it within the state.
 
@@ -30,9 +30,11 @@ This allocation depends on the partisan makeup of the state. In highly polarized
 
 These hypotheses could easily be tested with the right data. This is how I would set up my models: 
 
+```
 % negative ads out of all ads = state expected vote margin * # of electoral votes + % voters registered to parties (to measure polarization) + demographic controls for the effectiveness of ads
 
 number of offices in a state = state expected vote margin * # of electoral votes + % voters registered to parties + demographic controls for the effectiveness of offices
+```
 
 The extent of a state's "battleground" nature should be controlled for by interacting the expected vote margin (perhaps measured by early polling) and the number of electoral votes. Demographic controls (most notably for urbanization) should take care of small variations in campaign effectiveness across states. And, if this model is correct, we should expect to find a positive and significant coefficient on our proxy for polarization in both equations.
 
