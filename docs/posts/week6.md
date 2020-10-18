@@ -4,7 +4,7 @@
 [Back to main page](https://hwsimpson33.github.io/pres2020/)
 
 This week I want to explore campaign strategy based on this prompt: 
->Let’s say a field office costs \$21,000 and 1 GRP buy [TV ad buy] is \$300. If you are a campaign manager for Biden or Trump with a fixed budget, where would you build or air and how much? What is the ground game strategy for Trump and Biden in 2020 in the middle of pandemic?
+>Let’s say a field office costs \$21,000 and 1 GRP buy [TV ad buy] is \$300. If you are a campaign manager for Biden or Trump with a fixed budget, where would you build or air and how much?
 
 Rather than starting with literature from American political science on the effectiveness of field offices and ad buys, I want to start with a theoretical paper from comparative politics: Jordan Gans-Morse, Sebastian Muzzuca, and Simeon Nichter's 2014 paper ["Varieties of Clientelism: Machine Politics during Elections."](https://www.jstor.org/stable/24363494?seq=1) This paper is not about American elections or even democratic elections – it's about clientelist strategies used by political machines in hybrid regimes. Although it uses terms like "vote buying" and "turnout buying," I believe the strategies described translate relatively well to US elections. 
 
