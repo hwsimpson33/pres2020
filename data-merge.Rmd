@@ -127,6 +127,24 @@ state.polling.ave <- state.polling %>%
 
 all.data <- merge(ec.data, state.polling.ave, all = TRUE)
 
+```
+
+```{r}
+#merge in turnout data, 1980-2016
+
+#read in turnout data from week 6 section folder
+turnout.data.raw <- read_csv("./turnout_1980-2016.csv")
+
+#get rid of midterm years and national data
+turnout.data <- turnout.data.raw %>% 
+  filter(year %in% c(1980, 1984, 1988, 1992, 1996, 2000, 2004, 2008, 2012, 2016)) %>% 
+  filter(state != "United States") %>% 
+  mutate(turnout_pct = as.numeric(parse_number(turnout_pct)),
+         turnout_pct = case_when((year == 2016) ~ 100 * turnout_pct,
+                                (year != 2016) ~ turnout_pct))
+
+all.data <- merge(turnout.data, all.data, all = TRUE)
+
 write.csv(all.data, "./all_data.csv", row.names = FALSE)
 ```
 

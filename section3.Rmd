@@ -15,6 +15,7 @@ library(tidyverse)
 library(broom)
 library(rstanarm)
 library(stargazer)
+library(lme4)
 
 my.data <- read_csv("./all_data.csv")
 

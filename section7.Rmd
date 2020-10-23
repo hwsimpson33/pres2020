@@ -12,25 +12,48 @@ rm(list = ls())
 knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
-library(usmap)
+library(broom)
+library(lme4)
 ```
 
 ```{r}
-my.data <- read_csv("./31117693.csv")
+my.data <- read_csv("./all_data.csv")
 
-my.approve.data <- my.data %>% group_by(ppstaten) %>% tally(Q1 == "Approve") %>% rename(approve = n)
+my.rplot <- my.data %>% ggplot(aes(x = turnout_pct, y = R_pv2p)) + geom_point() + geom_smooth(method = "lm") + theme_classic()
+my.dplot <- my.data %>% ggplot(aes(x = turnout_pct, y = D_pv2p)) + geom_point() + geom_smooth(method = "lm") + theme_classic()
+my.dplot
 
-my.disapprove.data <- my.data %>% group_by(ppstaten) %>% tally(Q1 == "Disapprove") %>% rename(disapprove = n)
-                                                             
-my.new.data <- merge(my.approve.data, my.disapprove.data, by = "ppstaten", all = TRUE) 
+rmodel <- my.data %>% filter(!is.na(turnout_pct)) %>%
+  group_by(state) %>% 
+  do(tidy(lm(R_pv2p ~ turnout_pct, data = .))) %>% 
+  filter(term == "turnout_pct")
 
-my.new.data <- my.new.data %>% mutate(total = approve + disapprove, per.approve = approve / total) %>% rename(state = ppstaten)
+dmodel <- my.data %>% filter(!is.na(turnout_pct)) %>%
+  group_by(state) %>% 
+  do(tidy(lm(D_pv2p ~ turnout_pct, data = .))) %>% 
+  filter(term == "turnout_pct")
 
-plot_usmap(data = my.new.data, regions = "state", values = "per.approve") +
-    scale_fill_gradient2(high = "red", 
-                         low = "white") +
-  theme_void()
+#r has 18 significant, d has 9 significant
+rtest.data <- rmodel %>% filter(p.value < 0.1)
+dtest.data <- dmodel %>% filter(p.value < 0.1)
 
-ggsave()
+hist(rmodel$estimate)
+hist(dmodel$estimate)
 
+state.rturnout.plot <- my.data %>%
+  group_by(state) %>% 
+  ggplot(aes(x = turnout_pct, y = R_pv2p)) + 
+    geom_point() + 
+    geom_smooth(method = "lm") + 
+    facet_wrap(. ~ state) + 
+    theme_classic()
+state.rturnout.plot
+ggsave("docs/images/state_turnout_plot.png", plot = state.rturnout.plot, height = 15, width = 22.5)
+
+my.data <- my.data %>% group_by(state) %>% arrange(state, year) %>% mutate(prev_turnout = dplyr::lag(turnout_pct))
+
+my.data$cut.turnout <- cut(my.data$turnout_pct, c(seq(from = 35, to = 80, by = 5)))
+
+my.model <- lmer(R_pv2p ~ prev_Rvote + (1 + unem.diff|cut.turnout), data = my.data)
+summary(my.model)
 ```
