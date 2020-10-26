@@ -43,5 +43,7 @@ The results of these models were a little difficult to interpret and present, no
 
 The relationship between turnout and vote share is likely to be important in this election. Both COVID-19 and energetic mobilization/ demobilization campaigns on both sides will likely impact turnout and vote share. We won't know turnout before the election, so the models I have been testing here will need to be adapted before they can be used. But we may be able to make turnout projections based on early voting. In general, however, the high predictability of county-level results should dampen the effects of this year's shocks. Finally, the relationship between turnout and vote share appears outside of Russia, and definitely  does not (exclusively) indicate electoral fraud. This is a potential area for research in comparative political science. Does this relationship really reflect mobilization? How does it change across electoral systems?
 
+[Back to main page](https://hwsimpson33.github.io/pres2020/)
+
 [^1]: It is important to use data that is as disaggregated as possible, because many of these patterns change or disappear at higher levels of aggregation (see [Simpson's paradox](https://en.wikipedia.org/wiki/Simpson%27s_paradox)).
 [^2]: As I discovered in [my second blog post](week2.md), unemployment is not a very good predictor for elections. But it's the only one I have at a state level right now (I haven't been able to get state-level historical real income, although I know the data exist).
