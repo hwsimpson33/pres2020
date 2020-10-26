@@ -15,6 +15,7 @@ library(tidyverse)
 library(broom)
 library(lme4)
 library(stringr)
+library(readxl)
 ```
 
 ```{r}
@@ -234,12 +235,15 @@ county.level <- county.level %>% group_by(state_abb, end.fips) %>% arrange(state
 county.filter <- county.level %>%
   filter(!is.na(D_win_margin), !is.na(turnout.pct), state_abb != "ND", turnout.pct < 101) 
 
-my.model <- county.filter %>%
+no.dem.model <- county.filter %>%
   group_by(state_abb) %>%
-  do(model = lm(D_win_margin ~ turnout.pct + year + lag.dmargin + White + age65, .)) %>% 
+  do(model = lm(D_win_margin ~ turnout.pct, .)) %>% 
   rowwise() %>% glance(model)
 
-test.data <- my.model %>% filter(term == "turnout.pct", p.value < 0.05)
+dem.model <- county.filter %>%
+  group_by(state_abb) %>%
+  do(model = lm(D_win_margin ~ turnout.pct + year + lag.dmargin + White + age65, .)) %>% 
+  rowwise() %>% tidy(model)
 
 state.turnout.vote.plot <- county.filter %>% 
   group_by(state) %>% 
@@ -255,13 +259,102 @@ state.turnout.vote.plot <- county.filter %>%
 ggsave("docs/images/state_turnout_vote_plot.png", plot = state.turnout.vote.plot, height = 15, width = 22.5)
 
 #alternate approach
-my.model <- lmList(D_win_margin ~ turnout.pct + year + lag.dmargin + White | state, data = county.filter)
-summary.lm(my.model[2])
+# my.model <- lmList(D_win_margin ~ turnout.pct + year + lag.dmargin + White | state, data = county.filter)
+# summary.lm(my.model[2])
 ```
 
 ```{r}
-state.county.data <- merge(state.turnout, county.filter, by = c("state", "year"), all = TRUE)
+state.county.data <- merge(state.turnout, county.filter, by = c("state", "year"), all = TRUE) %>% filter(year > 1999, !is.na(turnout.pct))
 
-# my.multi.model <- lmer(D_win_margin ~ unem.diff + (1 + turnout.pct|fips), data = state.county.data, REML = FALSE)
+#still 23 sig
+ec.model <- state.county.data %>%
+  group_by(state_abb) %>%
+  do(model = lm(D_win_margin ~ turnout.pct + year + lag.dmargin + White + age65 + unem.diff, .)) %>% 
+  rowwise() %>% glance(model)
 
+polls.model <- state.county.data %>%
+  group_by(state_abb) %>%
+  do(model = lm(D_win_margin ~ turnout.pct + year + lag.dmargin + White + age65 + unem.diff + ave.030, .)) %>% 
+  rowwise() %>% tidy(model)
+
+#still 22 sig
+test.data <- polls.model %>% filter(term == "turnout.pct", p.value < 0.05)
+```
+
+```{r}
+ads.raw <- read_csv("./ad_campaigns_2000-2012.csv")
+offices.raw <- read_csv("./fieldoffice_2012_bycounty.csv")
+
+#not 2016
+state.ads <- ads.raw %>% arrange(cycle, party, state) %>% 
+  group_by(cycle, party, state) %>% 
+  mutate(state.total = sum(total_cost)) %>% 
+  select(party, state, cycle, state.total) %>% 
+  distinct() %>% 
+  pivot_wider(names_from = party, values_from = state.total) %>% 
+  mutate(democrat = case_when(is.na(democrat) ~ 0, #N/A means they didn't spend money that day, set to 0
+                              !is.na(democrat) ~ democrat),
+         ads.diff = (democrat - republican) / (democrat + republican)) %>% 
+  select(-democrat, - republican) %>% 
+  dplyr::rename(year = cycle,
+                state_abb = state)
+
+ads.state.county <- merge(state.county.data, state.ads, by = c("year", "state_abb"), all = TRUE) %>% 
+  filter(!is.na(D_win_margin)) %>% 
+  mutate(ads.diff = case_when(is.na(ads.diff) ~ 0, #N/A means they didn't spend money that day, set to 0
+                              !is.na(ads.diff) ~ ads.diff))
+
+#17 states
+ads.model <- ads.state.county %>% filter(year != 2016) %>% mutate(ave.030 = case_when(is.na(ave.030) ~ ave.30plus, !is.na(ave.030) ~ ave.030)) %>% 
+  group_by(state_abb) %>%
+  do(model = lm(D_win_margin ~ turnout.pct + year + lag.dmargin + White + age65 + unem.diff + ave.030 + ads.diff, .)) %>% 
+  rowwise() %>% glance(model)
+
+
+state.county.2012 <- state.county.data %>% filter(year == 2012)
+
+state.county.offices <- merge(state.county.2012, offices.raw, by = c("fips"), all = TRUE) %>% filter(!is.na(turnout.pct))
+
+ads.state.county.2012 <- ads.state.county %>% filter(year == 2012) %>% select(fips, ads.diff)
+
+state.county.offices.ads <- merge(state.county.offices, ads.state.county.2012, by = "fips", all = TRUE)
+
+state.county.offices <- state.county.offices.ads %>% mutate(offices.diff = obama12fo - romney12fo)
+
+#13 significant
+state.county.offices.filter <- state.county.offices %>% 
+  filter(year == 2012) %>% 
+  mutate(offices.diff = case_when(is.na(offices.diff) ~ 0, 
+                                  !is.na(offices.diff) ~ offices.diff), 
+         ave.030 = case_when(is.na(ave.030) ~ ave.30plus, 
+                             !is.na(ave.030) ~ ave.030))
+  
+#13 sig w/o ave.030, 13 sig w/ ave.030 + filter on ave.030 n/as
+offices.model <- state.county.offices.filter %>% filter(!is.na(ave.030)) %>% 
+  group_by(state_abb) %>%
+  do(model = lm(D_win_margin ~ turnout.pct + lag.dmargin + White + age65 + offices.diff, .)) %>% 
+  rowwise() %>% tidy(model)
+
+offices.ads.model <- state.county.offices.filter %>% filter(!is.na(ave.030)) %>% 
+  group_by(state_abb) %>%
+  do(model = lm(D_win_margin ~ turnout.pct + lag.dmargin + White + age65 + offices.diff, .)) %>% 
+  rowwise() %>% tidy(model)
+
+no.turnout.model <- state.county.offices.filter %>% filter(!is.na(ave.030)) %>% 
+  group_by(state_abb) %>%
+  do(model = lm(D_win_margin ~ lag.dmargin + White + age65 + offices.diff + ads.diff, .)) %>% 
+  rowwise() %>% tidy(model)
+
+offices.ads.test.model <- offices.ads.model %>% select(state_abb, r.squared, adj.r.squared)
+no.turnout.test.model <- no.turnout.model %>% select(state_abb, r.squared, adj.r.squared) %>% rename(no.turnout.r.squared = r.squared, no.turnout.adj.r.squared = adj.r.squared)
+
+my.data <- merge(offices.ads.test.model, no.turnout.test.model, by = "state_abb", all = TRUE) %>% mutate(r.diff = r.squared - no.turnout.r.squared, adj.r.diff = adj.r.squared - no.turnout.adj.r.squared)
+
+
+#13 sig w/o ave.030, 13 sig w/ ave.030 + filter on ave.030 n/as
+test.data <- offices.ads.model %>% filter(term == "turnout.pct", p.value < 0.05)
+```
+
+```{r}
+# my.multi.model <- lmer(D_win_margin ~ unem.diff + ave.030 + (1 + turnout.pct + lag.dmargin + White + age65|state), data = state.county.data)
 ```
