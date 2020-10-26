@@ -14,21 +14,22 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(broom)
 library(lme4)
+library(stringr)
 ```
 
 ```{r}
-my.data <- read_csv("./all_data.csv")
+state.turnout <- read_csv("./all_data.csv")
 
-my.rplot <- my.data %>% ggplot(aes(x = turnout_pct, y = R_pv2p)) + geom_point() + geom_smooth(method = "lm") + theme_classic()
-my.dplot <- my.data %>% ggplot(aes(x = turnout_pct, y = D_pv2p)) + geom_point() + geom_smooth(method = "lm") + theme_classic()
+my.rplot <- state.turnout %>% ggplot(aes(x = turnout_pct, y = R_pv2p)) + geom_point() + geom_smooth(method = "lm") + theme_classic()
+my.dplot <- state.turnout %>% ggplot(aes(x = turnout_pct, y = D_pv2p)) + geom_point() + geom_smooth(method = "lm") + theme_classic()
 my.dplot
 
-rmodel <- my.data %>% filter(!is.na(turnout_pct)) %>%
+rmodel <- state.turnout %>% filter(!is.na(turnout_pct)) %>%
   group_by(state) %>% 
   do(tidy(lm(R_pv2p ~ turnout_pct, data = .))) %>% 
   filter(term == "turnout_pct")
 
-dmodel <- my.data %>% filter(!is.na(turnout_pct)) %>%
+dmodel <- state.turnout %>% filter(!is.na(turnout_pct)) %>%
   group_by(state) %>% 
   do(tidy(lm(D_pv2p ~ turnout_pct, data = .))) %>% 
   filter(term == "turnout_pct")
@@ -40,7 +41,7 @@ dtest.data <- dmodel %>% filter(p.value < 0.1)
 hist(rmodel$estimate)
 hist(dmodel$estimate)
 
-state.rturnout.plot <- my.data %>%
+state.rturnout.plot <- state.turnout %>%
   group_by(state) %>% 
   ggplot(aes(x = turnout_pct, y = R_pv2p)) + 
     geom_point() + 
@@ -50,7 +51,7 @@ state.rturnout.plot <- my.data %>%
 state.rturnout.plot
 ggsave("docs/images/state_turnout_plot.png", plot = state.rturnout.plot, height = 15, width = 22.5)
 
-my.data <- my.data %>% group_by(state) %>% arrange(state, year) %>% mutate(prev_turnout = dplyr::lag(turnout_pct))
+state.turnout <- state.turnout %>% group_by(state) %>% arrange(state, year) %>% mutate(prev_turnout = dplyr::lag(turnout_pct))
 
 # my.data$cut.turnout <- cut(my.data$turnout_pct, c(seq(from = 35, to = 80, by = 5)))
 # 
@@ -59,6 +60,7 @@ my.data <- my.data %>% group_by(state) %>% arrange(state, year) %>% mutate(prev_
 ```
 
 ```{r}
+#source: https://dataverse.harvard[.]edu/dataset.xhtml?persistentId=doi:10.7910/DVN/WRSW25
 county.92.data.raw <- read_excel("./Turnout_Data_1992.xlsx", sheet = 3)
 county.92.data <-  county.92.data.raw %>% 
   filter(!is.na(...1), ...2 != "T") %>% 
@@ -72,7 +74,7 @@ county.92.data <-  county.92.data.raw %>%
          Republican...18, 
          `Independent/Unenrolled...19`, 
          FIPS) %>% 
-  rename(dem.reg = Democrat...17, 
+  dplyr::rename(dem.reg = Democrat...17, 
          rep.reg = Republican...18,
          ind.reg = `Independent/Unenrolled...19`) %>% 
   mutate(year = 1992)
@@ -90,7 +92,7 @@ county.96.data <- county.96.data.raw %>%
          Republican...18, 
          `Independent/Unaffiliated...19`, 
          FIPS) %>% 
-  rename(dem.reg = Democrat...17, 
+  dplyr::rename(dem.reg = Democrat...17, 
          rep.reg = Republican...18,
          ind.reg = `Independent/Unaffiliated...19`) %>% 
   mutate(year = 1996)
@@ -109,7 +111,7 @@ county.00.data <- county.00.data.raw %>% filter(!is.na(...1), ...2 != "T") %>%
          Republican...20, 
          `Independent/Unenrolled...21`, 
          FIPS) %>% 
-  rename(`Voting Age Pop` = `Voting Age Population`,
+  dplyr::rename(`Voting Age Pop` = `Voting Age Population`,
          dem.reg = Democrat...19, 
          rep.reg = Republican...20,
          ind.reg = `Independent/Unenrolled...21`) %>% 
@@ -129,7 +131,7 @@ county.04.data <- county.04.data.raw %>% filter(!is.na(...1), ...2 != "T") %>%
          Republican...19, 
          `Independent/Unenrolled...20`, 
          FIPS) %>% 
-  rename(dem.reg = Democrat...18, 
+  dplyr::rename(dem.reg = Democrat...18, 
          rep.reg = Republican...19,
          ind.reg = `Independent/Unenrolled...20`) %>% 
   mutate(year = 2004)
@@ -148,7 +150,7 @@ county.08.data <- county.08.data.raw %>% filter(!is.na(...1), ...2 != "T") %>%
          Republican...20, 
          `Independent/Unenrolled...21`, 
          FIPS) %>% 
-  rename(dem.reg = Democrat...19, 
+  dplyr::rename(dem.reg = Democrat...19, 
          rep.reg = Republican...20,
          ind.reg = `Independent/Unenrolled...21`) %>% 
   mutate(year = 2008)
@@ -157,7 +159,7 @@ county.turnout <- rbind(county.turnout, county.08.data)
 
 county.12.data.raw <- read_excel("./Turnout_Data_2012.xlsx", sheet = 3)
 county.12.data <- county.12.data.raw %>% 
-  rename(...1 = `<- expand at left`,
+  dplyr::rename(...1 = `<- expand at left`,
          `Total Population` = Population,
          `Total Registered` = `Total Reg`,
          Turnout = `Total Vote`,
@@ -181,11 +183,11 @@ county.turnout <- rbind(county.turnout, county.12.data)
 
 county.16.data.raw <- read_excel("./Turnout_Data_2016.xlsx", sheet = 3)
 county.16.data <- county.16.data.raw %>% 
-  rename(`Total Population` = Population,
-         `Total Registered` = `Total Reg`,
-         dem.reg = Democratic...19, 
-         rep.reg = Republican...20,
-         ind.reg = `Independent...21`) %>% 
+  dplyr::rename(`Total Population` = Population,
+                `Total Registered` = `Total Reg`,
+                dem.reg = Democratic...19, 
+                rep.reg = Republican...20,
+                ind.reg = `Independent...21`) %>% 
   filter(!is.na(...1), ...2 != "T") %>% 
   select(...1, 
          ...2, 
@@ -200,9 +202,66 @@ county.16.data <- county.16.data.raw %>%
   mutate(year = 2016)
 
 county.turnout <- rbind(county.turnout, county.16.data)
+
+county.turnout <- county.turnout %>% dplyr::rename(county = ...1,
+                                                   state_abb = ...2)
 ```
 
 ```{r}
 #merge w/ county-level vote share + demo (2000, 2004, 2008, 2012, 2016)
 #run regressions, vote share on turnout
+
+county.demo <- read_csv("./demog_county_1990-2018.csv")
+county.vote <- read_csv("./popvote_bycounty_2000-2016.csv")
+
+#there are some that aren't being matched up/ don't exist in one dataset or the other, but I don't have time to track down why
+county.data <- merge(county.turnout, county.vote, by = c("state_abb", "county", "year"), all = TRUE) %>% 
+  filter(year > 1999) %>% 
+  mutate(new.fips = as.character(fips),                                                                            end.fips = str_sub(new.fips, str_length(new.fips) - 2, str_length(new.fips)))
+
+county.demo <- county.demo %>% dplyr::rename(state_abb = state, end.fips = fips_county) %>% filter(year %in% c(2000, 2004, 2008, 2012, 2016))
+
+#merge isn't perfect, but good enough
+county.level <- merge(county.data, county.demo, by = c("state_abb", "end.fips", "year"), all = TRUE) %>% filter(!is.na(end.fips), !is.na(state_abb))
+
+county.level <- county.level %>% group_by(state_abb, end.fips) %>% arrange(state_abb, end.fips, year) %>% 
+  mutate(turnout.pct = Turnout * 100 / `Total Registered`,
+                                        lag.dmargin = dplyr::lag(D_win_margin))
+```
+
+```{r}
+#ND has 0 voter registration
+county.filter <- county.level %>%
+  filter(!is.na(D_win_margin), !is.na(turnout.pct), state_abb != "ND", turnout.pct < 101) 
+
+my.model <- county.filter %>%
+  group_by(state_abb) %>%
+  do(model = lm(D_win_margin ~ turnout.pct + year + lag.dmargin + White + age65, .)) %>% 
+  rowwise() %>% glance(model)
+
+test.data <- my.model %>% filter(term == "turnout.pct", p.value < 0.05)
+
+state.turnout.vote.plot <- county.filter %>% 
+  group_by(state) %>% 
+  ggplot(aes(x = turnout.pct, y = D_win_margin)) + 
+    geom_point() + 
+    geom_smooth(method = "lm") + 
+    facet_wrap(. ~ state) + 
+    theme_classic() + 
+    labs(x = "x", 
+         y = "y",
+         title = "title")
+                                                                  
+ggsave("docs/images/state_turnout_vote_plot.png", plot = state.turnout.vote.plot, height = 15, width = 22.5)
+
+#alternate approach
+my.model <- lmList(D_win_margin ~ turnout.pct + year + lag.dmargin + White | state, data = county.filter)
+summary.lm(my.model[2])
+```
+
+```{r}
+state.county.data <- merge(state.turnout, county.filter, by = c("state", "year"), all = TRUE)
+
+# my.multi.model <- lmer(D_win_margin ~ unem.diff + (1 + turnout.pct|fips), data = state.county.data, REML = FALSE)
+
 ```
