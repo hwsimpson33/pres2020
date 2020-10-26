@@ -303,7 +303,9 @@ state.turnout.vote.plot <- county.filter %>%
     theme_classic() + 
     labs(x = "Turnout (Ballots for President / Registered Voters)", 
          y = "Democratic Vote Margin",
-         title = "County turnout and vote share by state")
+         title = "County turnout and vote share by state") +
+    theme(axis.line = element_line(colour = "#E1E1E1"))
+
                                                                   
 ggsave("docs/images/state_turnout_vote_plot.png", plot = state.turnout.vote.plot, height = 15, width = 22.5)
 
@@ -368,17 +370,31 @@ ads.state.county <- merge(state.county.data, state.ads, by = c("year", "state_ab
 #17 states
 ads.model <- ads.state.county %>% filter(year != 2016) %>% mutate(ave.030 = case_when(is.na(ave.030) ~ ave.30plus, !is.na(ave.030) ~ ave.030)) %>% 
   group_by(state_abb) %>%
-  do(model = lm(D_win_margin ~ turnout.pct + year + lag.dmargin + White + age65 + ads.diff, .)) %>% 
+  do(model = lm(D_win_margin ~ turnout.pct + year + lag.dmargin + White + age65 + unem.diff + ads.diff + ave.030 , .)) %>% 
   rowwise() %>% glance(model)
+
+r2.plot <- ads.model %>% filter(adj.r.squared != "NaN", adj.r.squared != 0) %>% ggplot(aes(x = adj.r.squared)) + 
+  geom_histogram(bins = 10, fill = "#404040") + 
+  theme_classic() + 
+  theme(axis.line = element_line(colour = "#E1E1E1")) + labs(x = "Adjusted R Squared (each observation is one state-level regression", y = "Frequency", title = "Distribution of R Squared", subtitle = "democratic win margin = county-level turnout + lagged democratic win margin + year fixed effects + \n% White + % over 65 + year-on-year Q2 unemployment + poll average from last 30 days of race + \nstate difference in ad spending", caption = "Some states are excluded because of missing data. Includes data from 2000-2012.")
+r2.plot
+
+ggsave("docs/images/r2_plot.png", plot = r2.plot, height = 5, width = 7.5)
+
+```
+
+
+
+```{r}
 
 no.turnout.ads.model <- ads.state.county %>% filter(year != 2016) %>% mutate(ave.030 = case_when(is.na(ave.030) ~ ave.30plus, !is.na(ave.030) ~ ave.030)) %>% 
   group_by(state_abb) %>%
   do(model = lm(D_win_margin ~ lag.dmargin + White + age65 + unem.diff + ave.030 + ads.diff, .)) %>% 
   rowwise() %>% tidy(model)
 
-ads.test.model <- ads.model %>% filter(term == "turnout.pct", p.value < 0.05)
+# ads.test.model <- ads.model %>% filter(term == "turnout.pct", p.value < 0.05)
 
-my.data <- merge(offices.ads.test.model, no.turnout.test.model, by = "state_abb", all = TRUE) %>% mutate(r.diff = r.squared - no.turnout.r.squared, adj.r.diff = adj.r.squared - no.turnout.adj.r.squared)
+# my.data <- merge(offices.ads.test.model, no.turnout.test.model, by = "state_abb", all = TRUE) %>% mutate(r.diff = r.squared - no.turnout.r.squared, adj.r.diff = adj.r.squared - no.turnout.adj.r.squared)
 
 
 state.county.2012 <- state.county.data %>% filter(year == 2012)
@@ -414,10 +430,10 @@ no.turnout.model <- state.county.offices.filter %>% filter(!is.na(ave.030)) %>%
   do(model = lm(D_win_margin ~ lag.dmargin + White + age65 + offices.diff + ads.diff, .)) %>% 
   rowwise() %>% tidy(model)
 
-offices.ads.test.model <- offices.ads.model %>% select(state_abb, r.squared, adj.r.squared)
-no.turnout.test.model <- no.turnout.model %>% select(state_abb, r.squared, adj.r.squared) %>% rename(no.turnout.r.squared = r.squared, no.turnout.adj.r.squared = adj.r.squared)
+# offices.ads.test.model <- offices.ads.model %>% select(state_abb, r.squared, adj.r.squared)
+# no.turnout.test.model <- no.turnout.model %>% select(state_abb, r.squared, adj.r.squared) %>% rename(no.turnout.r.squared = r.squared, no.turnout.adj.r.squared = adj.r.squared)
 
-my.data <- merge(offices.ads.test.model, no.turnout.test.model, by = "state_abb", all = TRUE) %>% mutate(r.diff = r.squared - no.turnout.r.squared, adj.r.diff = adj.r.squared - no.turnout.adj.r.squared)
+# my.data <- merge(offices.ads.test.model, no.turnout.test.model, by = "state_abb", all = TRUE) %>% mutate(r.diff = r.squared - no.turnout.r.squared, adj.r.diff = adj.r.squared - no.turnout.adj.r.squared)
 
 
 #13 sig w/o ave.030, 13 sig w/ ave.030 + filter on ave.030 n/as
