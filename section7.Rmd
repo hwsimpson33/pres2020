@@ -235,15 +235,56 @@ county.level <- county.level %>% group_by(state_abb, end.fips) %>% arrange(state
 county.filter <- county.level %>%
   filter(!is.na(D_win_margin), !is.na(turnout.pct), state_abb != "ND", turnout.pct < 101) 
 
+basic.model <- county.filter %>% lm(D_win_margin ~ turnout.pct, .)
+summary(basic.model)
+
+basic.model.dem <- county.filter %>% filter(D_win_margin > 0) %>% lm(D_win_margin ~ turnout.pct, .)
+summary(basic.model.dem)
+
+basic.model.rep <- county.filter %>% filter(D_win_margin < 0) %>% lm(D_win_margin ~ turnout.pct, .)
+summary(basic.model.rep)
+
 no.dem.model <- county.filter %>%
   group_by(state_abb) %>%
   do(model = lm(D_win_margin ~ turnout.pct, .)) %>% 
-  rowwise() %>% glance(model)
+  rowwise() %>% tidy(model)
+
+no.dem.model.test <- no.dem.model %>% filter(term == "turnout.pct", p.value < 0.05)
 
 dem.model <- county.filter %>%
   group_by(state_abb) %>%
   do(model = lm(D_win_margin ~ turnout.pct + year + lag.dmargin + White + age65, .)) %>% 
   rowwise() %>% tidy(model)
+
+turnout.vote.plot <- county.filter %>% ungroup() %>% 
+  ggplot(aes(x = turnout.pct, y = D_win_margin)) + 
+    geom_point() + 
+    geom_smooth(method = "lm") + 
+    theme_classic() + 
+    labs(x = "my.x", 
+         y = "y",
+         title = "title")
+turnout.vote.plot  
+
+turnout.vote.dplot <- county.filter %>% ungroup() %>% filter(D_win_margin > 0) %>% 
+  ggplot(aes(x = turnout.pct, y = D_win_margin)) + 
+    geom_point() + 
+    geom_smooth(method = "lm") + 
+    theme_classic() + 
+    labs(x = "my.x", 
+         y = "y",
+         title = "title")
+turnout.vote.dplot  
+
+turnout.vote.rplot <- county.filter %>% ungroup() %>% filter(D_win_margin < 0) %>% 
+  ggplot(aes(x = turnout.pct, y = D_win_margin)) + 
+    geom_point() + 
+    geom_smooth(method = "lm") + 
+    theme_classic() + 
+    labs(x = "my.x", 
+         y = "y",
+         title = "title")
+turnout.vote.rplot  
 
 state.turnout.vote.plot <- county.filter %>% 
   group_by(state) %>% 
@@ -307,8 +348,18 @@ ads.state.county <- merge(state.county.data, state.ads, by = c("year", "state_ab
 #17 states
 ads.model <- ads.state.county %>% filter(year != 2016) %>% mutate(ave.030 = case_when(is.na(ave.030) ~ ave.30plus, !is.na(ave.030) ~ ave.030)) %>% 
   group_by(state_abb) %>%
-  do(model = lm(D_win_margin ~ turnout.pct + year + lag.dmargin + White + age65 + unem.diff + ave.030 + ads.diff, .)) %>% 
+  do(model = lm(D_win_margin ~ turnout.pct + year + lag.dmargin + White + age65 + ave.030 + ads.diff, .)) %>% 
+  rowwise() %>% tidy(model)
+
+no.turnout.ads.model <- ads.state.county %>% filter(year != 2016) %>% mutate(ave.030 = case_when(is.na(ave.030) ~ ave.30plus, !is.na(ave.030) ~ ave.030)) %>% 
+  group_by(state_abb) %>%
+  do(model = lm(D_win_margin ~ lag.dmargin + White + age65 + unem.diff + ave.030 + ads.diff, .)) %>% 
   rowwise() %>% glance(model)
+
+ads.test.model <- offices.ads.model %>% select(state_abb, r.squared, adj.r.squared)
+no.turnout.ads.test.model <- no.turnout.model %>% select(state_abb, r.squared, adj.r.squared) %>% rename(no.turnout.r.squared = r.squared, no.turnout.adj.r.squared = adj.r.squared)
+
+my.data <- merge(offices.ads.test.model, no.turnout.test.model, by = "state_abb", all = TRUE) %>% mutate(r.diff = r.squared - no.turnout.r.squared, adj.r.diff = adj.r.squared - no.turnout.adj.r.squared)
 
 
 state.county.2012 <- state.county.data %>% filter(year == 2012)
@@ -321,7 +372,6 @@ state.county.offices.ads <- merge(state.county.offices, ads.state.county.2012, b
 
 state.county.offices <- state.county.offices.ads %>% mutate(offices.diff = obama12fo - romney12fo)
 
-#13 significant
 state.county.offices.filter <- state.county.offices %>% 
   filter(year == 2012) %>% 
   mutate(offices.diff = case_when(is.na(offices.diff) ~ 0, 
