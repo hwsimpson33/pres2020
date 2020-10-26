@@ -1,4 +1,4 @@
-## Examining Two Professional Prediction Models
+## Examining two professional prediction models
 ### September 26, 2020
 
 [Back to main page](https://hwsimpson33.github.io/pres2020/)

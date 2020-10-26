@@ -1,4 +1,4 @@
-## The Mobilization Battle: Turnout and Vote Share
+## The mobilization battle: turnout and vote share
 ### October 24, 2020
 
 [Back to main page](https://hwsimpson33.github.io/pres2020/)
