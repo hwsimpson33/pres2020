@@ -12,11 +12,13 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-#ToDo: aggregate up to electoral college results, run leave-one-out test, figure out how to measure uncertainty of polls (sqrt(n)), simulate random variation in polls for each state based on amount of state-level data or figure out how to combine uncertainties and present them, graphics, writeup and comments, county-level predictions for Pennsylvania, Nevada, Florida if time
+#ToDo: in-sample fit, out-of-sample fit, figure out how to combine poll uncertainties and present them, more graphics, writeup and comments, county-level predictions for Pennsylvania, Nevada, Florida if time
 #https://projects[.]fivethirtyeight.com/polls/president-general/national/
 
 library(tidyverse)
 library(broom)
+library(readxl)
+library(usmap)
 
 polls.2020.raw <- read_csv("./president_polls.csv")
 all.data <- read_csv("./all_data.csv")
@@ -167,10 +169,14 @@ for(df in split.data) {
   my.model <- lm(rlead.vote ~ rlead.prev + rlead.030, data = df)
   my.state.model <- tidy(my.model) %>% mutate(state = my.state)
   my.model.stats <- glance(my.model) %>% mutate(state = my.state)
+  
   my.state.model <- merge(my.state.model, my.model.stats, all = TRUE)
+  
   my.2020 <- df %>% filter(year == 2020)
-  state.predict <- tidy(predict(my.model, my.2020))
-  my.state.model$my.predict <- state.predict$x
+  state.predict <- tidy(predict(my.model, my.2020, interval = "confidence"))
+  my.state.model$my.predict <- state.predict$fit
+  my.state.model$lwr <- state.predict$lwr
+  my.state.model$upr <- state.predict$upr
   
   my.prev <- df %>% filter(year == 2020)
   my.prev <- my.prev$rlead.prev
@@ -189,7 +195,101 @@ states.model <- states.model %>%
   arrange(state, term)
 ```
 
-```{r}
-predict.results <- states.model %>% select(state, my.predict) %>% distinct()
+```{r warning=FALSE}
 
+my.names <- names(split.data)
+states.model.2 <- data.frame(0)
+loop <- 0
+
+for(df in split.data) {
+  my.state <- paste(my.names[loop + 1])
+  
+  my.model <- lm(rlead.vote ~ rlead.030, data = df)
+  my.state.model <- tidy(my.model) %>% mutate(state = my.state)
+  my.model.stats <- glance(my.model) %>% mutate(state = my.state)
+  
+  my.state.model <- merge(my.state.model, my.model.stats, all = TRUE)
+  
+  my.2020 <- df %>% filter(year == 2020)
+  state.predict <- tidy(predict(my.model, my.2020, interval = "confidence"))
+  my.state.model$my.predict <- state.predict$fit
+  my.state.model$lwr <- state.predict$lwr
+  my.state.model$upr <- state.predict$upr
+  
+  my.prev <- df %>% filter(year == 2020)
+  my.prev <- my.prev$rlead.prev
+  
+  my.state.model <- my.state.model %>% 
+    mutate(my.predict = case_when(is.na(my.predict) ~ my.prev,
+                                  !is.na(my.predict) ~ my.predict))
+
+  
+  states.model.2 <- merge(states.model.2, my.state.model, all = TRUE)
+  loop <- loop + 1
+}
+
+states.model.2 <- states.model.2 %>% 
+  select(-X0) %>% 
+  arrange(state, term)
+```
+
+```{r}
+predict.results <- states.model %>% 
+  select(state, my.predict, lwr, upr) %>% 
+  distinct() %>% 
+  mutate(interval.size = upr - lwr)
+
+predict.results.2 <- states.model.2 %>% 
+  select(state, my.predict, lwr, upr) %>% 
+  distinct() %>% 
+  mutate(interval.size = upr - lwr) %>% 
+  rename(my.predict.2 = my.predict, lwr.2 = lwr, upr.2 = upr, interval.size.2 = interval.size)
+
+my.test <- merge(predict.results, predict.results.2)
+my.test <- my.test %>% mutate(predict.diff = my.predict - my.predict.2,
+                              interval.diff = interval.size - interval.size.2)
+
+my.test %>% ggplot(aes(x = predict.diff, y = interval.diff)) + geom_point() + theme_classic()
+hist(my.test$predict.diff)
+hist(my.test$interval.diff)
+```
+
+```{r}
+college <- read_excel("./electoralcollege.xlsx", skip = 1) %>% rename(state = State)
+
+predict.results <- merge(predict.results, college, by = "state", all = TRUE)
+
+predict.results <- predict.results %>% mutate(won = case_when(my.predict > 0 ~ 1,
+                                                              my.predict < 0 ~ 0),
+                                              total.votes = sum(won * ec.votes)) 
+
+my.predict.results <- predict.results %>%  
+  filter(!is.na(lwr)) %>% 
+  mutate(won.lwr = case_when(lwr > 0 ~ 1,
+                             lwr < 0 ~ 0),
+         total.votes.lwr = sum(won.lwr * ec.votes),
+         won.upr = case_when(upr > 0 ~ 1,
+                             upr < 0 ~ 0),
+         total.votes.upr = sum(won.upr * ec.votes))
+
+predict.results <- merge(predict.results, my.predict.results, all = TRUE)
+```
+
+```{r}
+
+plot.data <- predict.results %>% select(state, my.predict, won)
+
+states_map <- usmap::us_map()
+
+#copied from code for section1
+won.map.plot <- plot_usmap(data = plot.data, regions = "state", values = "won") +
+  scale_fill_gradient2(high = "red", 
+                       mid = "blue",
+                       limits = c(0, 1),
+                       breaks = c(0, 1),
+                       name = "Won") +
+  theme_void() +
+  labs(title = "title", 
+       subtitle  = "subtitle")
+won.map.plot
 ```
