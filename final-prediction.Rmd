@@ -12,13 +12,15 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-#ToDo: in-sample fit, out-of-sample fit, figure out how to combine poll uncertainties and present them, more graphics, writeup and comments, county-level predictions for Pennsylvania, Nevada, Florida if time
+#ToDo: out-of-sample fit, more graphics (coefficients + fit measures table, predictions + intervals table), writeup and code comments, popular vote prediction
+#county-level predictions for Pennsylvania, Nevada, Florida if time
 #https://projects[.]fivethirtyeight.com/polls/president-general/national/
 
 library(tidyverse)
 library(broom)
 library(readxl)
 library(usmap)
+library(dvmisc)
 
 polls.2020.raw <- read_csv("./president_polls.csv")
 all.data <- read_csv("./all_data.csv")
@@ -154,7 +156,6 @@ my.model.1 <- reg.full.data %>%
 
 ```{r}
 split.data <- split(reg.full.data, reg.full.data$state)
-
 ```
 
 ```{r warning=FALSE}
@@ -177,6 +178,7 @@ for(df in split.data) {
   my.state.model$my.predict <- state.predict$fit
   my.state.model$lwr <- state.predict$lwr
   my.state.model$upr <- state.predict$upr
+  my.state.model$mse <- get_mse(my.model)
   
   my.prev <- df %>% filter(year == 2020)
   my.prev <- my.prev$rlead.prev
@@ -215,6 +217,8 @@ for(df in split.data) {
   my.state.model$my.predict <- state.predict$fit
   my.state.model$lwr <- state.predict$lwr
   my.state.model$upr <- state.predict$upr
+  my.state.model$mse <- get_mse(my.model)
+  
   
   my.prev <- df %>% filter(year == 2020)
   my.prev <- my.prev$rlead.prev
@@ -277,7 +281,15 @@ predict.results <- merge(predict.results, my.predict.results, all = TRUE)
 
 ```{r}
 
-plot.data <- predict.results %>% select(state, my.predict, won)
+plot.data <- predict.results %>% 
+  mutate(margin = case_when((upr > 0 & lwr < 0) ~ abs(my.predict) / interval.size,
+                            is.na(upr) ~ won,
+                            (upr < 0 | lwr > 0) ~ won),
+         all.margin = abs(my.predict) / interval.size, 
+         new.won = case_when(won == 1 ~ won,
+                             won == 0 ~ -1),
+         margin.by.won = all.margin * new.won) %>% 
+  select(state, my.predict, won, margin, all.margin, margin.by.won)
 
 states_map <- usmap::us_map()
 
@@ -292,4 +304,26 @@ won.map.plot <- plot_usmap(data = plot.data, regions = "state", values = "won") 
   labs(title = "title", 
        subtitle  = "subtitle")
 won.map.plot
+
+ggsave("docs/images/won_map_plot.png", plot = won.map.plot, height = 5, width = 7.5)
+
+margin.map.plot <- plot_usmap(data = plot.data, regions = "state", values = "margin") +
+  scale_fill_gradient2(high = "red", 
+                       mid = "blue",
+                       name = "Margin") +
+  theme_void() +
+  labs(title = "title", 
+       subtitle  = "subtitle")
+margin.map.plot
+
+uncertainty.map.plot <- plot_usmap(data = plot.data, regions = "state", values = "margin.by.won") +
+  scale_fill_gradient2(high = "red", 
+                       mid = "purple",
+                       low = "blue",
+                       name = "Certainty") +
+  theme_void() +
+  labs(title = "title", 
+       subtitle  = "subtitle")
+uncertainty.map.plot
+
 ```
