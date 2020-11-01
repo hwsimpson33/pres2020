@@ -1,0 +1,173 @@
+---
+title: "final-prediction"
+author: "Helen Simpson"
+date: "10/31/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list = ls())
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#ToDo: figure out how to use predict() in the do() loop, generate predictions for all states, aggregate up to electoral college results, run leave-one-out test, figure out how to measure uncertainty of polls (sqrt(n)), simulate random variation in polls for each state based on amount of state-level data or figure out how to combine uncertainties and present them, graphics, writeup and comments, county-level predictions for Pennsylvania, Nevada, Florida if time
+#https://projects[.]fivethirtyeight.com/polls/president-general/national/
+
+library(tidyverse)
+library(broom)
+
+polls.2020.raw <- read_csv("./president_polls.csv")
+all.data <- read_csv("./all_data.csv")
+```
+
+```{r}
+polls.2020 <- polls.2020.raw %>% 
+  mutate(start_date = as.Date(start_date, tryFormats = c("%m/%d/%y"))) %>% 
+  filter(fte_grade %in% c("A+", "A", "A-", "A/B", "B+", "B", "B-", "B/C"), 
+         candidate_party %in% c("DEM", "REP"),
+         !is.na(state)) %>% 
+  select(poll_id, cycle, state, pollster, fte_grade, sample_size, population, start_date, end_date, candidate_party, pct) %>% 
+  group_by(poll_id, candidate_party) %>% 
+  mutate(poll.ave = sum(pct)/length(pct)) %>% 
+  select(-pct) %>% 
+  distinct() %>% 
+  pivot_wider(names_from = candidate_party, values_from = poll.ave)
+
+polls.030 <- polls.2020 %>% 
+  filter(start_date > as.Date("2020-10-03")) %>% 
+  group_by(state) %>% 
+  arrange(state) %>% 
+  mutate(rlead = REP - DEM,
+         rlead.030 = sum(rlead / length(rlead))) %>% 
+  select(state, rlead.030) %>% 
+  distinct()
+
+polls.30plus <- polls.2020 %>% 
+  filter(start_date < as.Date("2020-10-03")) %>% 
+  group_by(state) %>% 
+  arrange(state) %>% 
+  mutate(rlead = REP - DEM,
+         rlead.30plus = sum(rlead / length(rlead))) %>% 
+  select(state, rlead.30plus) %>% 
+  distinct()
+
+pollave.2020 <- merge(polls.030, polls.30plus, all = TRUE)
+
+#actually there are state-wide polls...we'll just use those
+# maine.data <- pollave.2020 %>% 
+#   filter(state == "Maine CD-1" | state == "Maine CD-2") %>% 
+#   mutate(rlead.030 = sum(rlead.030)/length(rlead.030),
+#          rlead.30plus = sum(rlead.30plus)/length(rlead.30plus),
+#          state = "Maine") %>% 
+#   distinct()
+
+nebraska.data <- pollave.2020 %>% 
+  filter(state == "Nebraska CD-1" | state == "Nebraska CD-2") %>% 
+  mutate(rlead.030 = rlead.030[2],
+         rlead.30plus = sum(rlead.30plus)/length(rlead.30plus),
+         state = "Nebraska") %>% 
+  distinct()
+
+# pollave.2020 <- merge(pollave.2020, maine.data, all = TRUE)
+pollave.2020 <- merge(pollave.2020, nebraska.data, all = TRUE)
+
+pollave.2020 <- pollave.2020 %>% filter(state != "Maine CD-1",
+                                        state != "Maine CD-2",
+                                        state != "Nebraska CD-1",
+                                        state != "Nebraska CD-2")
+```
+
+```{r}
+state.data <- all.data %>% 
+  select(year, state, R_pv2p, D_pv2p, prev_Rvote, prev_Dvote, ave.30plus, ave.030) %>% 
+  rename(rlead.030 = ave.030,
+         rlead.30plus = ave.30plus) %>% 
+  filter(!is.na(R_pv2p), 
+         !is.na(prev_Rvote), 
+         year >= 1972) %>% 
+  mutate(rlead.prev = prev_Rvote - prev_Dvote,
+         rlead.vote = R_pv2p - D_pv2p) %>% 
+  select(-R_pv2p, -D_pv2p, -prev_Rvote, -prev_Dvote)
+
+reg.data <- state.data %>%
+  mutate(rlead.030 = case_when(is.na(rlead.030) ~ rlead.30plus,
+                               !is.na(rlead.030) ~ rlead.030)) %>% 
+  filter(state != "District of Columbia")
+
+my.model.1 <- reg.data %>% 
+  group_by(state) %>% 
+  do(model = lm(rlead.vote ~ rlead.prev + rlead.030, .)) %>% 
+  rowwise() %>% glance(model)
+
+my.model.2 <- reg.data %>% 
+  group_by(state) %>% 
+  do(model = lm(rlead.vote ~ rlead.prev + rlead.030 + rlead.30plus, .)) %>% 
+  rowwise() %>% glance(model)
+
+my.model.3 <- reg.data %>% 
+  group_by(state) %>% 
+  do(model = lm(rlead.vote ~ rlead.prev + rlead.030 + as.factor(year), .)) %>% 
+  rowwise() %>% glance(model)
+
+```
+
+```{r}
+vote.2016 <- state.data %>% 
+  filter(year == 2016) %>% 
+  select(state, rlead.vote) %>% 
+  rename(rlead.prev = rlead.vote)
+
+data.2020 <- merge(pollave.2020, vote.2016, all = TRUE)
+
+data.2020 <- data.2020 %>% 
+  mutate(year = 2020, 
+         rlead.vote = 0,
+         rlead.vote = na_if(rlead.vote, 0))
+
+state.data <- rbind(state.data, data.2020)
+```
+
+```{r}
+reg.full.data <- state.data %>%
+  mutate(rlead.030 = case_when(is.na(rlead.030) ~ rlead.30plus,
+                               !is.na(rlead.030) ~ rlead.030)) %>% 
+  filter(state != "District of Columbia") %>% 
+  group_by(state)
+
+my.model.1 <- reg.full.data %>% 
+  do(model = lm(rlead.vote ~ rlead.prev + rlead.030, .)) %>% 
+  rowwise() %>% tidy(model) %>% 
+  filter(state == "Alaska")
+
+ 
+my.predict <- tidy(predict(lm(rlead.vote ~ rlead.prev + rlead.030, data = reg.full.data), 
+        reg.full.data[reg.full.data$year == 2020,]))
+  
+test.data <- reg.full.data[reg.full.data$year == 2020,]
+
+test.predict <- predict(my.model.1, state.data[year == 2020])
+# pred_econ_inc <- predict(mod_econ_inc_, dat_econ_inc[dat_econ_inc$year == year,])
+```
+
+```{r}
+split.data <- split(reg.full.data, reg.full.data$state)
+
+my.names <- names(split.data)
+states.model <- data.frame(my.names) %>% rename(state = my.names)
+loop <- 1
+
+for(df in split.data) {
+  my.state <- paste(my.names[loop])
+  my.model <- lm(rlead.vote ~ rlead.prev + rlead.030, data = df)
+  my.state.model <- tidy(my.model)
+  my.state.model <- state.model %>%
+    mutate(state = my.state)
+  #state.predict <- predict(my.model, df[df$year == 2020])
+  states.model <- merge(states.model, state.model, by = c("state"), all = TRUE)
+  loop <- loop + 1
+}
+
+states.model <- states.model %>% arrange(state, term)
+```
