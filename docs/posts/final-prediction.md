@@ -27,7 +27,7 @@ There are lots of ways to make this model more complicated. One could use previo
 
 [Back to main page](https://hwsimpson33.github.io/pres2020/)
 
-# Appendix: Model tables
+### Appendix: Model tables
 
 Table 1: Full predictions
 <table style="border-collapse:collapse;" class=table_9844 border=2>
