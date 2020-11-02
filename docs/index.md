@@ -17,3 +17,5 @@ Hello! Gov 1347 is a class on election analytics that will focus on predicting t
 ## [Week 6: Optimizing campaign strategies](posts/week6.md)
 
 ## [Week 7: Turnout and vote share](posts/week7.md)
+
+## [Final prediction](posts/final-prediction.md)

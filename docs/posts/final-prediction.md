@@ -3,7 +3,7 @@
 
 [Back to main page](https://hwsimpson33.github.io/pres2020/)
 
-I am using a very simple model to predict the 2020 election, but one grounded in political science results and the patterns I have observed in previous weeks. For each state, I have taken the result from the previous presidential election and an average of all high-quality polls in the thirty days before the election and used them to predict election results with a linear regression. I chose to use previous vote share because states often show continuity between elections (as I learned in my [Week 1](week1.md) blog post). I am using polls from just before the election because [political science research](https://gking.harvard.edu/files/abs/variable-abs.shtml) has shown that polls are often very accurate in the days leading up to the election. I am not including the so-called "fundamental" variables like economic performance and incumbency or campaign variables like ad spending and field offices because these factors should be "priced in" to the polls at this late stage in the race. In previous weeks, I have not found significant effects for state-level results and the national economy (see [Week 2](week2.md)). I have also found that ad spending does not foreshadow poll movements but TV mentions of candidates' names does (see [Week 5](week5.md)). Therefore, I have decided to focus on two aspects of the presidential race: the polls, which capture the state of the race and previous state-level vote, which sometimes acts as a corrective to the polls.
+I am using a very simple model to predict the 2020 election, but one grounded in political science results and the patterns I have observed in previous weeks. For each state, I have taken the result from the previous presidential election and an average of all high-quality polls (polls rated between B/C and A+ by 538) in the thirty days before the election and used them to predict election results with a linear regression. I chose to use previous vote share because states often show continuity between elections (as I learned in my [Week 1](week1.md) blog post). I am using polls from just before the election because [political science research](https://gking.harvard.edu/files/abs/variable-abs.shtml) has shown that polls are often very accurate in the days leading up to the election. I am not including the so-called "fundamental" variables like economic performance and incumbency or campaign variables like ad spending and field offices because these factors should be "priced in" to the polls at this late stage in the race. In previous weeks, I have not found significant effects for state-level results and the national economy (see [Week 2](week2.md)). I have also found that ad spending does not foreshadow poll movements but TV mentions of candidates' names does (see [Week 5](week5.md)). Therefore, I have decided to focus on two aspects of the presidential race: the polls, which capture the state of the race and previous state-level vote, which sometimes acts as a corrective to the polls.
 
 This model predicts that *Donald Trump* will win between *164* and *263* electoral college votes with 95% probability, with the most likey result that he wins *203* votes. Conversely, *Joe Biden* will win between *275* and *374* votes with 95% probability, with his most likely tally at *335*. Although a Trump victory (for which he needs *270* electoral college votes) is outside the 95% confidence interval of this model, it is very close to the edge of that interval (263 votes for Trump). This model predicts a Biden victory, but there is still a small chance that Trump will win.
 
@@ -15,15 +15,24 @@ This map shows how "safe" states are predicted to be. The more red a state is, t
 <img src = "../images/uncertainty_map_plot.png">
 [Click here to see full-size image.](https://hwsimpson33.github.io/pres2020/images/uncertainty_map_plot.png)
 
+The formula I used was: 
 
+```
+state margin for Rep. candidate = previous margin for Rep. candidate + average of state polls in 30 days prior to election
 
--dive into the model itself (formula, interpretation of coefficients)
--discuss model validation
+```
 
--ways to make this more complicated: county-level, poll aggregation, nebraska + maine
+I ran fifty separate regressions, one for each state (full results are in the Appendix, table 2). In this model specification, the coefficient on the previous margin represents the amount by which Republican vote margin is expected to increase given a one point increase in the previous Republican vote margin. The coefficient on the state polls average represents the expected increase in Republican vote margin given a one point increase in the amount that the Republican candidate is favored by the poll. 
 
-coefficients table and fit table
+In order to validate this model, I measured the mean squared error (in-sample fit) and r2.
 
+There are lots of ways to make this model more complicated. One could use previous county-level results and state-level polls to predict county-level vote share, and then aggregate up to the state level. A sophisticated approach would be to disaggregate state-level polling using county-level demographics and then use these estimates to project county-level vote share. Another way to complicate this model is to aggregate polls in a more complicated way. Both of these ideas require collecting data from the polls themselves, rather than a polling aggregator like 538, and so proved infeasible given the time alloted. For future elections, however, I plan to explore these approaches.
+
+[Back to main page](https://hwsimpson33.github.io/pres2020/)
+
+#Appendix: Model tables
+
+Table 1: Full predictions
 <table style="border-collapse:collapse;" class=table_9844 border=2>
 <thead>
 <tr>
@@ -343,6 +352,7 @@ coefficients table and fit table
 </tbody>
 </table>
 
+Table 2: Regression results
 <table style="border-collapse:collapse;" class=table_9844 border=2>
 <thead>
 <tr>
@@ -1358,7 +1368,7 @@ coefficients table and fit table
 </tbody>
 </table>
 
-
+Table 3: Model validation
 <table style="border-collapse:collapse;" class=table_4464 border=2>
 <thead>
 <tr>
@@ -1677,4 +1687,5 @@ coefficients table and fit table
 </tr>
 </tbody>
 </table>
+
 [Back to main page](https://hwsimpson33.github.io/pres2020/)
