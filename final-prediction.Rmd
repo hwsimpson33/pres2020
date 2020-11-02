@@ -32,6 +32,7 @@ all.data <- read_csv("./all_data.csv")
 
 ```{r}
 #format poll data from 538
+
 #process polls: convert date format, take only highly-graded polls, average over several polls by the same pollster on the same day, change data format so that each poll is one observation rather than two
 polls.2020 <- polls.2020.raw %>% 
   mutate(start_date = as.Date(start_date, tryFormats = c("%m/%d/%y"))) %>% 
@@ -95,6 +96,7 @@ pollave.2020 <- pollave.2020 %>% filter(state != "Maine CD-1",
 
 ```{r}
 #format data, preliminary models
+
 #take the things we need from all.data and format the df
 state.data <- all.data %>% 
   select(year, state, R_pv2p, D_pv2p, prev_Rvote, prev_Dvote, ave.30plus, ave.030) %>% 
@@ -131,6 +133,7 @@ my.model.2 <- reg.data %>%
 
 ```{r}
 #format and merge 2020 dataset
+
 #get 2016 vote results for 2020's previous vote
 vote.2016 <- state.data %>% 
   filter(year == 2016) %>% 
@@ -177,27 +180,50 @@ split.data <- split(reg.full.data, reg.full.data$state)
 ```
 
 ```{r warning=FALSE}
+#this is the chunk where the loop/ main analysis takes place
 
+#extract state names, now the names of each df
 my.names <- names(split.data)
+
+#create a df with just 0 that we can merge into
 states.model <- data.frame(0)
+
+#start a counter at zero for extracting names (might not work if you start at one? not sure)
 loop <- 0
 
+#LOOP for running state-level regressions, predictions, tests
 for(df in split.data) {
+  
+  #get the state name by interating over the my.names list of state names and the "loop" counter
   my.state <- paste(my.names[loop + 1])
   
+  #run the regression: predict state-level vote share with previous vote share and last 30 days of polls
   my.model <- lm(rlead.vote ~ rlead.prev + rlead.030, data = df)
+  
+  #store coefficients
   my.state.model <- tidy(my.model) %>% mutate(state = my.state)
+  
+  #store regression stats
   my.model.stats <- glance(my.model) %>% mutate(state = my.state)
   
+  #merge coefficients and regression stats
   my.state.model <- merge(my.state.model, my.model.stats, all = TRUE)
   
+  #get 2020 only data fot this state
   my.2020 <- df %>% filter(year == 2020)
+  
+  #predict! using the predict function. tidy to coerce to dataframe
+  #this throws a warning (tidy + numeric deprecated), that's why warnings for this chunk are off
   state.predict <- tidy(predict(my.model, my.2020, interval = "confidence"))
+  
+  #move predict elements into the dataframe for this state (loop dataframe)
   my.state.model$my.predict <- state.predict$fit
   my.state.model$lwr <- state.predict$lwr
   my.state.model$upr <- state.predict$upr
   my.state.model$mse <- get_mse(my.model)
   
+  # trying to impute predictions for states w/ missing polls by using previous vote only
+  # for some reason, this still isn't working (I can't get states to stop showing up as 100%+) so it's commented out for now
   # my.prev <- df %>% filter(year == 2020)
   # my.prev <- my.prev$rlead.prev
   # 
@@ -205,10 +231,11 @@ for(df in split.data) {
   #   mutate(my.predict = case_when(is.na(my.predict) ~ my.prev,
   #                                 !is.na(my.predict) ~ my.predict))
 
-  
+  #merge state loop dataframe with master dataframe
   states.model <- merge(states.model, my.state.model, all = TRUE)
   
 # run out of sample fit (partially working)
+# from class code, section 3 -- some help from Sam Thau's code as well
 # year_list <- seq(from = 1972, to = 2016, by = 4)
 # 
 # year <- 1972
@@ -246,9 +273,11 @@ for(df in split.data) {
 # outsamp_df <- cbind("year", "state","fund_margin_error",
 #                 "polls_margin_error","plus_margin_error","fund_correct","polls_correct","plus_correct")
 
+  #iterate loop counter
   loop <- loop + 1
 }
 
+#clean up new master dataframe: get rid of placeholder zeros, filter out states w/ no polls and so no predict value (see explanation above)
 states.model <- states.model %>%
   select(-X0) %>% 
   filter(!is.na(my.predict)) %>% 
@@ -256,6 +285,10 @@ states.model <- states.model %>%
 ```
 
 ```{r eval=FALSE, warning=FALSE, include=FALSE}
+#this chunck does the same as the chunk above but for a regression model with just polls (no previous vote) to compare predictions/ predicitive power
+#results are ambiguous (certainly not uniformly good for the official = previous model)
+#see comments in previous chunk for code explanation
+#this chunck marked eval = false (will not run) because it's not needed for any of the blog post stuff and can cause confusion
 
 my.names <- names(split.data)
 states.model.2 <- data.frame(0)
@@ -281,6 +314,7 @@ for(df in split.data) {
   my.prev <- df %>% filter(year == 2020)
   my.prev <- my.prev$rlead.prev
   
+  #attempted solution to DC/ RI/ WY bug (see above)
   my.state.model <- my.state.model %>% 
     mutate(fake.my.prev = my.prev - 50,
            my.predict = case_when(is.na(my.predict) ~ fake.my.prev,
@@ -297,6 +331,11 @@ states.model.2 <- states.model.2 %>%
 ```
 
 ```{r}
+#gather, format, and print tables for blog post
+#print lines are commented out for ease of use, if you want to change a table just uncomment it
+#note that you have to copy/ paste HTML output from here to your markdown document. see explanation in week 5
+
+#table of point predictions, predictive interval
 predict.table.df <- states.model %>% 
   select(state, my.predict, lwr, upr) %>%
   distinct() %>% 
@@ -306,6 +345,7 @@ predict.table <- tableHTML(predict.table.df, rownames = FALSE, border = 2, round
 
 # print(predict.table, viewer = FALSE)
 
+#table of regression coefficients, significance for each state
 coefficients.table.df <- states.model %>%
   select(state, term, estimate, std.error, p.value) %>% 
   mutate(term = case_when(term == "(Intercept)" ~ "Intercept", 
@@ -318,6 +358,7 @@ coefficients.table <- tableHTML(coefficients.table.df, rownames = FALSE, border 
 
 # print(coefficients.table, viewer = FALSE)
 
+#table with model summary statistics (r^2, mean squared error) for each state
 fit.table.df <- states.model %>% 
   select(state, r.squared, adj.r.squared, mse) %>%
   filter(!is.na(r.squared)) %>% 
@@ -329,6 +370,10 @@ fit.table <- tableHTML(fit.table.df, rownames = FALSE, border = 2, round = 4)
 ```
 
 ```{r}
+#this chunck is for further processing of the prediction results
+#the commented-out bit is for comparing the results of the vote share = polls + prev vote vs. vote share = polls models. make sure to run that chunk first
+
+#generate interval size, point estimates for Trump/ Biden
 predict.results <- states.model %>% 
   select(state, my.predict, lwr, upr) %>% 
   distinct() %>% 
@@ -352,14 +397,22 @@ predict.results <- states.model %>%
 ```
 
 ```{r}
+#this chunck is for producing electoral college estimates
+
+#bring in data on the electoral college
+#from https://en.wikipedia[.]org/wiki/United_States_Electoral_College
+#skip the first row, which has the source info in it
 college <- read_excel("./electoralcollege.xlsx", skip = 1) %>% rename(state = State)
 
 predict.results <- merge(predict.results, college, by = "state", all = TRUE)
 
+#who wins each state, sum up electoral votes
 predict.results <- predict.results %>% mutate(won = case_when(my.predict > 0 ~ 1,
                                                               my.predict < 0 ~ 0),
                                               total.votes = sum(won * ec.votes)) 
 
+#translate predicitive intervals into electoral college estimates
+#reminder that a number > 0 means the Republican (Trump) wins and vice versa
 my.predict.results <- predict.results %>% 
   mutate(won.lwr = case_when(lwr > 0 ~ 1,
                              lwr < 0 ~ 0),
@@ -377,6 +430,12 @@ predict.results <- merge(predict.results, my.predict.results, all = TRUE)
 ```
 
 ```{r}
+#this chunk is for calculating national-level popular vote estimates
+
+#bring in data on voting-eligible population estimates (from a blog) for each state
+#note that this makes the assumption that a comparable proportion of the voting-eligible population in each state will in fact vote (NOT really a reasonable assumption for this election, but oh well)
+#from  http://www[.]electproject.org/2020g
+#skip the first row, which has the source info in it
 population <- read_excel("./electoralcollege.xlsx", skip = 1, sheet = 2)
 
 predict.results <- merge(predict.results, population, by = "state", all = TRUE)
@@ -392,19 +451,22 @@ biden.pop.vote <- 100 - trump.pop.vote
 ```
 
 ```{r}
+#this chunk makes the prediction maps
 
+#calculate margin if 50% (i.e. 0) is inside the predictive range and sketchy fake z-score (distance from zero/ predictive interval size)
 plot.data <- predict.results %>% 
-  mutate(margin = case_when((upr > 0 & lwr < 0) ~ abs(my.predict) / interval.size,
-                            is.na(upr) ~ won,
-                            (upr < 0 | lwr > 0) ~ won),
-         all.margin = abs(my.predict) / interval.size, 
-         new.won = case_when(won == 1 ~ won,
+  mutate(margin = case_when((upr > 0 & lwr < 0) ~ abs(my.predict) / interval.size, #when interval has 0
+                            is.na(upr) ~ won, #this treats no-prediction states as having no interval
+                            (upr < 0 | lwr > 0) ~ won), #0 outside interval->treated as no interval (sure)
+         all.margin = abs(my.predict) / interval.size, #sketchy fake z-score
+         new.won = case_when(won == 1 ~ won, #convert from 0-1 scale to -1 to 1 scale
                              won == 0 ~ -1),
          margin.by.won = all.margin * new.won) %>% 
   select(state, my.predict, won, margin, all.margin, margin.by.won)
 
 states_map <- usmap::us_map()
 
+#predicted results (0/1)
 #copied from code for section1
 won.map.plot <- plot_usmap(data = plot.data, regions = "state", values = "won") +
   scale_fill_gradient2(high = "red", 
@@ -419,6 +481,7 @@ won.map.plot
 
 ggsave("docs/images/won_map_plot.png", plot = won.map.plot, height = 5, width = 7.5)
 
+#predicted results w/ margin (0/1 for states outside margin, purple for state inside margin)
 margin.map.plot <- plot_usmap(data = plot.data, regions = "state", values = "margin") +
   scale_fill_gradient2(high = "red", 
                        mid = "blue",
@@ -428,6 +491,9 @@ margin.map.plot <- plot_usmap(data = plot.data, regions = "state", values = "mar
        subtitle  = "subtitle")
 margin.map.plot
 
+#distance from margin as a proportion of size of predictive interval
+#not sure if this is a legit way to calculate likelihood of winning but we're going with it
+#a more sophisticated approach would calculate a proper z-score
 uncertainty.map.plot <- plot_usmap(data = plot.data, regions = "state", values = "margin.by.won") +
   scale_fill_gradient2(high = "red", 
                        mid = "purple",

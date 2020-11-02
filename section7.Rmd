@@ -19,29 +19,36 @@ library(readxl)
 ```
 
 ```{r}
+#read in state-level turnout data and plot some things
+
 state.turnout <- read_csv("./all_data.csv")
 
+#initial experimentation: plot state turnout and republican/ democratic vote share
 my.rplot <- state.turnout %>% ggplot(aes(x = turnout_pct, y = R_pv2p)) + geom_point() + geom_smooth(method = "lm") + theme_classic()
 my.dplot <- state.turnout %>% ggplot(aes(x = turnout_pct, y = D_pv2p)) + geom_point() + geom_smooth(method = "lm") + theme_classic()
-my.dplot
 
+#state-level regressions of vote share (republican) on turnout
 rmodel <- state.turnout %>% filter(!is.na(turnout_pct)) %>%
   group_by(state) %>% 
   do(tidy(lm(R_pv2p ~ turnout_pct, data = .))) %>% 
   filter(term == "turnout_pct")
 
+#state-level regression of state vote share (democratic) on turnout
 dmodel <- state.turnout %>% filter(!is.na(turnout_pct)) %>%
   group_by(state) %>% 
   do(tidy(lm(D_pv2p ~ turnout_pct, data = .))) %>% 
   filter(term == "turnout_pct")
 
+#how many states have a significant relationship?
 #r has 18 significant, d has 9 significant
 rtest.data <- rmodel %>% filter(p.value < 0.1)
 dtest.data <- dmodel %>% filter(p.value < 0.1)
 
+#coefficients on turnout
 hist(rmodel$estimate)
 hist(dmodel$estimate)
 
+#plot state-level regressions (all 50 states)
 state.rturnout.plot <- state.turnout %>%
   group_by(state) %>% 
   ggplot(aes(x = turnout_pct, y = R_pv2p)) + 
@@ -52,8 +59,13 @@ state.rturnout.plot <- state.turnout %>%
 state.rturnout.plot
 ggsave("docs/images/state_turnout_plot.png", plot = state.rturnout.plot, height = 15, width = 22.5)
 
-state.turnout <- state.turnout %>% group_by(state) %>% arrange(state, year) %>% mutate(prev_turnout = dplyr::lag(turnout_pct))
+#create previous turnout variable
+state.turnout <- state.turnout %>% 
+  group_by(state) %>% 
+  arrange(state, year) %>% 
+  mutate(prev_turnout = dplyr::lag(turnout_pct))
 
+#failed multilevel model attempt
 # my.data$cut.turnout <- cut(my.data$turnout_pct, c(seq(from = 35, to = 80, by = 5)))
 # 
 # my.model <- lmer(R_pv2p ~ prev_Rvote + (1 + unem.diff|cut.turnout), data = my.data)
@@ -61,25 +73,30 @@ state.turnout <- state.turnout %>% group_by(state) %>% arrange(state, year) %>% 
 ```
 
 ```{r}
+#collect, clean, merge county-level turnout data
 #source: https://dataverse.harvard[.]edu/dataset.xhtml?persistentId=doi:10.7910/DVN/WRSW25
+#i can't publish these datasets on GitHub because of the terms of the license, but you can download them from this link
+
+#1992
 county.92.data.raw <- read_excel("./Turnout_Data_1992.xlsx", sheet = 3)
 county.92.data <-  county.92.data.raw %>% 
-  filter(!is.na(...1), ...2 != "T") %>% 
+  filter(!is.na(...1), ...2 != "T") %>% #get rid of extra/ total rows 
   select(...1, 
          ...2, 
          `Total Population`, 
          `Voting Age Pop`, 
          `Total Registered`, 
          Turnout, 
-         Democrat...17, 
-         Republican...18, 
-         `Independent/Unenrolled...19`, 
+         Democrat...17, #number of registered democrats
+         Republican...18, #number of registered republicans
+         `Independent/Unenrolled...19`, #number of registered independents
          FIPS) %>% 
   dplyr::rename(dem.reg = Democrat...17, 
          rep.reg = Republican...18,
          ind.reg = `Independent/Unenrolled...19`) %>% 
   mutate(year = 1992)
 
+#1996
 county.96.data.raw <- read_excel("./Turnout_Data_1996.xlsx", sheet = 3)
 county.96.data <- county.96.data.raw %>% 
   filter(!is.na(...1), ...2 != "T") %>% 
@@ -100,6 +117,7 @@ county.96.data <- county.96.data.raw %>%
 
 county.turnout <- rbind(county.92.data, county.96.data)
 
+#2000
 county.00.data.raw <- read_excel("./Turnout_Data_2000.xlsx", sheet = 3)
 county.00.data <- county.00.data.raw %>% filter(!is.na(...1), ...2 != "T") %>% 
   select(...1, 
@@ -120,6 +138,7 @@ county.00.data <- county.00.data.raw %>% filter(!is.na(...1), ...2 != "T") %>%
 
 county.turnout <- rbind(county.turnout, county.00.data)
 
+#2004
 county.04.data.raw <- read_excel("./Turnout_Data_2004.xlsx", sheet = 3)
 county.04.data <- county.04.data.raw %>% filter(!is.na(...1), ...2 != "T") %>% 
   select(...1, 
@@ -139,6 +158,7 @@ county.04.data <- county.04.data.raw %>% filter(!is.na(...1), ...2 != "T") %>%
 
 county.turnout <- rbind(county.turnout, county.04.data)
 
+#2008
 county.08.data.raw <- read_excel("./Turnout_Data_2008.xlsx", sheet = 3)
 county.08.data <- county.08.data.raw %>% filter(!is.na(...1), ...2 != "T") %>% 
   select(...1, 
@@ -158,6 +178,7 @@ county.08.data <- county.08.data.raw %>% filter(!is.na(...1), ...2 != "T") %>%
 
 county.turnout <- rbind(county.turnout, county.08.data)
 
+#2012
 county.12.data.raw <- read_excel("./Turnout_Data_2012.xlsx", sheet = 3)
 county.12.data <- county.12.data.raw %>% 
   dplyr::rename(...1 = `<- expand at left`,
@@ -182,6 +203,7 @@ county.12.data <- county.12.data.raw %>%
 
 county.turnout <- rbind(county.turnout, county.12.data)
 
+#2016
 county.16.data.raw <- read_excel("./Turnout_Data_2016.xlsx", sheet = 3)
 county.16.data <- county.16.data.raw %>% 
   dplyr::rename(`Total Population` = Population,
@@ -209,55 +231,82 @@ county.turnout <- county.turnout %>% dplyr::rename(county = ...1,
 ```
 
 ```{r}
-#merge w/ county-level vote share + demo (2000, 2004, 2008, 2012, 2016)
-#run regressions, vote share on turnout
+#merge county-level turnout with vote share, demography
+#NOTE that county population numbers appear to be different b/t the class dataset and the one from the previous block (from the Harvard dataverse). Not sure why, don't have time to worry about it!
 
+#data from course page
 county.demo <- read_csv("./demog_county_1990-2018.csv")
 county.vote <- read_csv("./popvote_bycounty_2000-2016.csv")
 
+#process county data from class
 #there are some that aren't being matched up/ don't exist in one dataset or the other, but I don't have time to track down why
 county.data <- merge(county.turnout, county.vote, by = c("state_abb", "county", "year"), all = TRUE) %>% 
   filter(year > 1999) %>% 
-  mutate(new.fips = as.character(fips),                                                                            end.fips = str_sub(new.fips, str_length(new.fips) - 2, str_length(new.fips)))
+  mutate(new.fips = as.character(fips), #fips are coded as numbers
+         end.fips = str_sub(new.fips, str_length(new.fips) - 2, str_length(new.fips))) #extract the last three digits, which determine the county (the first two encode state)
 
-county.demo <- county.demo %>% dplyr::rename(state_abb = state, end.fips = fips_county) %>% filter(year %in% c(2000, 2004, 2008, 2012, 2016))
+county.demo <- county.demo %>% 
+  dplyr::rename(state_abb = state, end.fips = fips_county) %>% 
+  filter(year %in% c(2000, 2004, 2008, 2012, 2016))
 
 #merge isn't perfect, but good enough
 county.level <- merge(county.data, county.demo, by = c("state_abb", "end.fips", "year"), all = TRUE) %>% filter(!is.na(end.fips), !is.na(state_abb))
 
-county.level <- county.level %>% group_by(state_abb, end.fips) %>% arrange(state_abb, end.fips, year) %>% 
+#create turnout measure (ballots case as percent of registered) and lagged win margin measure
+county.level <- county.level %>% 
+  group_by(state_abb, end.fips) %>% 
+  arrange(state_abb, end.fips, year) %>% 
   mutate(turnout.pct = Turnout * 100 / `Total Registered`,
                                         lag.dmargin = dplyr::lag(D_win_margin))
 ```
 
 ```{r}
+#run initial county-level regressions and plot county-level national vote share vs. turnout
+
+#clean up dataset for regressing (get rid of inf + n/as)
 #ND has 0 voter registration
 county.filter <- county.level %>%
-  filter(!is.na(D_win_margin), !is.na(turnout.pct), state_abb != "ND", turnout.pct < 101) 
+  filter(!is.na(D_win_margin), 
+         !is.na(turnout.pct), 
+         state_abb != "ND", 
+         turnout.pct < 101) #excludes inf results from dividing by zero
 
+#predicting vote share using turnout, pooled
 basic.model <- county.filter %>% lm(D_win_margin ~ turnout.pct, .)
 summary(basic.model)
 
-basic.model.dem <- county.filter %>% filter(D_win_margin > 0) %>% lm(D_win_margin ~ turnout.pct, .)
+#predicting vote share using turnout, Democrat-winning counties only, pooled
+basic.model.dem <- county.filter %>% 
+  filter(D_win_margin > 0) %>% 
+  lm(D_win_margin ~ turnout.pct, .)
 summary(basic.model.dem)
 
-basic.model.rep <- county.filter %>% filter(D_win_margin < 0) %>% lm(D_win_margin ~ turnout.pct, .)
+#predicting vote share using turnout, Republican-winning counties only, pooled
+basic.model.rep <- county.filter %>% 
+  filter(D_win_margin < 0) %>% 
+  lm(D_win_margin ~ turnout.pct, .)
 summary(basic.model.rep)
 
+#state-level regression, predicting vote share using turnout
 no.dem.model <- county.filter %>%
   group_by(state_abb) %>%
   do(model = lm(D_win_margin ~ turnout.pct, .)) %>% 
-  rowwise() %>% tidy(model)
+  rowwise() %>% tidy(model) #switch to "glimpse()" for r^2 and other regression statistics 
 
+#states w/ significant turnout coefficients only
 no.dem.model.test <- no.dem.model %>% filter(term == "turnout.pct", p.value < 0.05)
 
+#state-level regression, predicting vote share using turnout, lagged vote and demographics (% white, % aged 65+)
+#can't use year fixed effects for some reason!
 dem.model <- county.filter %>%
   group_by(state_abb) %>%
-  do(model = lm(D_win_margin ~ turnout.pct + year + lag.dmargin + White + age65, .)) %>% 
+  do(model = lm(D_win_margin ~ turnout.pct + lag.dmargin + White + age65, .)) %>% 
   rowwise() %>% tidy(model)
 
+#states w/ significant turnout coefficients only
 dem.model.test <- dem.model %>% filter(term == "turnout.pct", p.value < 0.05)
 
+#plot county-level turnout and vote share, all together
 turnout.vote.plot <- county.filter %>% ungroup() %>% 
   ggplot(aes(x = turnout.pct, y = D_win_margin)) + 
     geom_point() + 
@@ -268,6 +317,8 @@ turnout.vote.plot <- county.filter %>% ungroup() %>%
          title = "title")
 turnout.vote.plot  
 
+#the following two plots are the upper and lower "halves" of the previous plot
+#plot county-level turnout and vote share, democratic-winning counties only
 turnout.vote.dplot <- county.filter %>% ungroup() %>% filter(D_win_margin > 0) %>% 
   ggplot(aes(x = turnout.pct, y = D_win_margin)) + 
     geom_point(color = "#277CB9") + 
@@ -280,7 +331,7 @@ turnout.vote.dplot
 
 ggsave("docs/images/turnout_vote_dplot.png", plot = turnout.vote.dplot, height = 5, width = 7.5)
 
-
+#plot county-level turnout and vote share, republican-winning counties only
 turnout.vote.rplot <- county.filter %>% ungroup() %>% filter(D_win_margin < 0) %>% 
   ggplot(aes(x = turnout.pct, y = D_win_margin)) + 
     geom_point(color = "#277CB9") + 
@@ -293,7 +344,7 @@ turnout.vote.rplot <- county.filter %>% ungroup() %>% filter(D_win_margin < 0) %
 turnout.vote.rplot 
 ggsave("docs/images/turnout_vote_rplot.png", plot = turnout.vote.rplot, height = 5, width = 7.5)
 
-
+#for each state, plot turnout and vote margin
 state.turnout.vote.plot <- county.filter %>% 
   group_by(state) %>% 
   ggplot(aes(x = turnout.pct, y = D_win_margin)) + 
@@ -305,78 +356,103 @@ state.turnout.vote.plot <- county.filter %>%
          y = "Democratic Vote Margin",
          title = "County turnout and vote share by state") +
     theme(axis.line = element_line(colour = "#E1E1E1"))
-
                                                                   
 ggsave("docs/images/state_turnout_vote_plot.png", plot = state.turnout.vote.plot, height = 15, width = 22.5)
 
-#alternate approach
+#alternate approach for running state-level regressions -- not successful
 # my.model <- lmList(D_win_margin ~ turnout.pct + year + lag.dmargin + White | state, data = county.filter)
 # summary.lm(my.model[2])
 ```
 
 ```{r}
+#merge with state-level data and run full-data regressions with county-level variables, state-level economic + poll variables
+
+#merge state and county datasets
 state.county.data <- merge(state.turnout, county.filter, by = c("state", "year"), all = TRUE) %>% filter(year > 1999, !is.na(turnout.pct))
 
-#still 29 sig
+#predict vote margin using county-level turnout, lagged vote share, demographics, and the Q2 year-on-year state-level unemployment difference
 ec.model <- state.county.data %>%
   group_by(state_abb) %>%
-  do(model = lm(D_win_margin ~ turnout.pct + year + lag.dmargin + White + age65 + unem.diff, .)) %>% 
+  do(model = lm(D_win_margin ~ turnout.pct + lag.dmargin + White + age65 + unem.diff, .)) %>% 
   rowwise() %>% tidy(model)
 
+#states w/ significant turnout coefficients only
+#still 29 sig
 ec.model.test <- ec.model %>% filter(term == "turnout.pct", p.value < 0.05)
 
 #polls model -- NO EC
+#predict vote margin using county-level turnout, lagged vote share, demographics, and the average of the state-level polls in the 30 days before the election
 polls.model <- state.county.data %>%
   group_by(state_abb) %>%
-  do(model = lm(D_win_margin ~ turnout.pct + year + lag.dmargin + White + age65 + ave.030, .)) %>% 
+  do(model = lm(D_win_margin ~ turnout.pct + lag.dmargin + White + age65 + ave.030, .)) %>% 
   rowwise() %>% tidy(model)
 
+#states w/ significant turnout coefficients only
 #still 19 sig
 polls.model.test <- polls.model %>% filter(term == "turnout.pct", p.value < 0.05)
 
 #polls model -- WITH EC
+#predict vote margin using county-level turnout, lagged vote share, demographics, the average of the state-level polls in the 30 days before the election, and the unemployment measure (see above or week 2)
 polls.ec.model <- state.county.data %>%
   group_by(state_abb) %>%
-  do(model = lm(D_win_margin ~ turnout.pct + year + lag.dmargin + White + age65 + ave.030 + unem.diff, .)) %>% 
+  do(model = lm(D_win_margin ~ turnout.pct + lag.dmargin + White + age65 + ave.030 + unem.diff, .)) %>% 
   rowwise() %>% tidy(model)
 
+#states w/ significant turnout coefficients only
 #still 19 sig
 polls.ec.model.test <- polls.model %>% filter(term == "turnout.pct", p.value < 0.05)
 ```
 
 ```{r}
+#clean up ad data, run ad data regressions and plot r^2s from that model
+
+#ad and field office data from class
 ads.raw <- read_csv("./ad_campaigns_2000-2012.csv")
 offices.raw <- read_csv("./fieldoffice_2012_bycounty.csv")
 
-#not 2016
-state.ads <- ads.raw %>% arrange(cycle, party, state) %>% 
+#organize/ format ad data, calculate difference in ad spending as a proportion of total spending
+#no data for 2016
+state.ads <- ads.raw %>% 
+  arrange(cycle, party, state) %>% 
   group_by(cycle, party, state) %>% 
-  mutate(state.total = sum(total_cost)) %>% 
-  select(party, state, cycle, state.total) %>% 
+  mutate(state.total = sum(total_cost)) %>% #total ad spending by state, party, year
+  select(party, state, cycle, state.total) %>% #so that distinct() works
   distinct() %>% 
-  pivot_wider(names_from = party, values_from = state.total) %>% 
+  pivot_wider(names_from = party, values_from = state.total) %>% #new version of spread()
   mutate(democrat = case_when(is.na(democrat) ~ 0, #N/A means they didn't spend money that day, set to 0
                               !is.na(democrat) ~ democrat),
-         ads.diff = (democrat - republican) / (democrat + republican)) %>% 
+         ads.diff = (democrat - republican) / (democrat + republican)) %>%
   select(-democrat, - republican) %>% 
   dplyr::rename(year = cycle,
                 state_abb = state)
 
+#merge with master dataset, impute n/a's as zero (again, because new state-years have been added in the merge)
 ads.state.county <- merge(state.county.data, state.ads, by = c("year", "state_abb"), all = TRUE) %>% 
   filter(!is.na(D_win_margin)) %>% 
   mutate(ads.diff = case_when(is.na(ads.diff) ~ 0, #N/A means they didn't spend money that day, set to 0
                               !is.na(ads.diff) ~ ads.diff))
 
+#predict vote margin using county-level turnout, lagged vote share, demographics, unemployment (see above), proportional difference in ad spending, and the average of the state-level polls in the 30 days before the election
 #17 states
-ads.model <- ads.state.county %>% filter(year != 2016) %>% mutate(ave.030 = case_when(is.na(ave.030) ~ ave.30plus, !is.na(ave.030) ~ ave.030)) %>% 
+ads.model <- ads.state.county %>% 
+  filter(year != 2016) %>% 
+  mutate(ave.030 = case_when(is.na(ave.030) ~ ave.30plus, #impute missing 30 day polls with 30+ polls
+                             !is.na(ave.030) ~ ave.030)) %>% 
   group_by(state_abb) %>%
-  do(model = lm(D_win_margin ~ turnout.pct + year + lag.dmargin + White + age65 + unem.diff + ads.diff + ave.030 , .)) %>% 
+  do(model = lm(D_win_margin ~ turnout.pct + lag.dmargin + White + age65 + unem.diff + ads.diff + ave.030 , .)) %>% 
   rowwise() %>% glance(model)
 
-r2.plot <- ads.model %>% filter(adj.r.squared != "NaN", adj.r.squared != 0) %>% ggplot(aes(x = adj.r.squared)) + 
-  geom_histogram(bins = 10, fill = "#404040") + 
-  theme_classic() + 
-  theme(axis.line = element_line(colour = "#E1E1E1")) + labs(x = "Adjusted R Squared (each observation is one state-level regression", y = "Frequency", title = "Distribution of R Squared", subtitle = "democratic win margin = county-level turnout + lagged democratic win margin + year fixed effects + \n% White + % over 65 + year-on-year Q2 unemployment + poll average from last 30 days of race + \nstate difference in ad spending", caption = "Some states are excluded because of missing data. Includes data from 2000-2012.")
+#plot distribution of r^2s for this model
+r2.plot <- ads.model %>% 
+  filter(adj.r.squared != "NaN", 
+         adj.r.squared != 0) %>% 
+  ggplot(aes(x = adj.r.squared)) + geom_histogram(bins = 10, fill = "#404040") + theme_classic() + 
+  theme(axis.line = element_line(colour = "#E1E1E1")) + 
+  labs(x = "Adjusted R Squared (each observation is one state-level regression", 
+       y = "Frequency", 
+       title = "Distribution of R Squared", 
+       subtitle = "democratic win margin = county-level turnout + lagged democratic win margin + \n% White + % over 65 + year-on-year Q2 unemployment + poll average from last 30 days of race + \nstate difference in ad spending", 
+       caption = "Some states are excluded because of missing data. Includes data from 2000-2012.")
 r2.plot
 
 ggsave("docs/images/r2_plot.png", plot = r2.plot, height = 5, width = 7.5)
@@ -386,60 +462,84 @@ ggsave("docs/images/r2_plot.png", plot = r2.plot, height = 5, width = 7.5)
 
 
 ```{r}
+#run regressions with ads/ offices/ both
 
-no.turnout.ads.model <- ads.state.county %>% filter(year != 2016) %>% mutate(ave.030 = case_when(is.na(ave.030) ~ ave.30plus, !is.na(ave.030) ~ ave.030)) %>% 
+#predict vote margin using lagged vote share, demographics, unemployment (see above), proportional difference in ad spending, and the average of the state-level polls in the 30 days before the election
+#test to see if turnout really improve predictive power
+no.turnout.ads.model <- ads.state.county %>% 
+  filter(year != 2016) %>% 
+  mutate(ave.030 = case_when(is.na(ave.030) ~ ave.30plus, #impute polls again (see above)
+                             !is.na(ave.030) ~ ave.030)) %>% 
   group_by(state_abb) %>%
   do(model = lm(D_win_margin ~ lag.dmargin + White + age65 + unem.diff + ave.030 + ads.diff, .)) %>% 
   rowwise() %>% tidy(model)
 
 # ads.test.model <- ads.model %>% filter(term == "turnout.pct", p.value < 0.05)
 
+#compare offices + ads + turnout to ads to see predictive power
+#turnout adds predictive power
+#this won't work here bc we don't have offices.ads.test.model yet! that's why it's commented out
 # my.data <- merge(offices.ads.test.model, no.turnout.test.model, by = "state_abb", all = TRUE) %>% mutate(r.diff = r.squared - no.turnout.r.squared, adj.r.diff = adj.r.squared - no.turnout.adj.r.squared)
 
-
+#only 2012, because we only have office data for 2012
 state.county.2012 <- state.county.data %>% filter(year == 2012)
 
+#merge office data and master data
 state.county.offices <- merge(state.county.2012, offices.raw, by = c("fips"), all = TRUE) %>% filter(!is.na(turnout.pct))
 
-ads.state.county.2012 <- ads.state.county %>% filter(year == 2012) %>% select(fips, ads.diff)
+ads.state.county.2012 <- ads.state.county %>% 
+  filter(year == 2012) %>% 
+  select(fips, ads.diff)
 
+#merge office data + master data and ad data
 state.county.offices.ads <- merge(state.county.offices, ads.state.county.2012, by = "fips", all = TRUE)
 
+#find difference in offices (NOTE THIS IS NOT PROPORTIONATE TO TOTAL OFFICES - probably an oversight)
 state.county.offices <- state.county.offices.ads %>% mutate(offices.diff = obama12fo - romney12fo)
 
+#clean up dataset for regression
 state.county.offices.filter <- state.county.offices %>% 
   filter(year == 2012) %>% 
-  mutate(offices.diff = case_when(is.na(offices.diff) ~ 0, 
+  mutate(offices.diff = case_when(is.na(offices.diff) ~ 0, #impute missing offices as zero
                                   !is.na(offices.diff) ~ offices.diff), 
-         ave.030 = case_when(is.na(ave.030) ~ ave.30plus, 
+         ave.030 = case_when(is.na(ave.030) ~ ave.30plus, #impute polls as above
                              !is.na(ave.030) ~ ave.030))
   
+
+#predict vote margin using turnout, lagged vote share, demographics, offices
+#other variables excluded in order to get the model to work
 #13 sig w/o ave.030, 13 sig w/ ave.030 + filter on ave.030 n/as
 offices.model <- state.county.offices.filter %>% filter(!is.na(ave.030)) %>% 
   group_by(state_abb) %>%
   do(model = lm(D_win_margin ~ turnout.pct + lag.dmargin + White + age65 + offices.diff, .)) %>% 
   rowwise() %>% tidy(model)
 
+#predict vote margin using turnout, lagged vote share, demographics, offices, ads (see above)
+#you should be able to add polls (ave.030) back in as well
 offices.ads.model <- state.county.offices.filter %>% filter(!is.na(ave.030)) %>% 
   group_by(state_abb) %>%
-  do(model = lm(D_win_margin ~ turnout.pct + lag.dmargin + White + age65 + offices.diff, .)) %>% 
+  do(model = lm(D_win_margin ~ turnout.pct + lag.dmargin + White + age65 + offices.diff + ads.diff, .)) %>% 
   rowwise() %>% tidy(model)
 
+#predict vote margin using lagged vote share, demographics, offices, ads (see above)
+#to test predictive power of turnout in this specification
+#you should be able to add polls (ave.030) back in as well
 no.turnout.model <- state.county.offices.filter %>% filter(!is.na(ave.030)) %>% 
   group_by(state_abb) %>%
   do(model = lm(D_win_margin ~ lag.dmargin + White + age65 + offices.diff + ads.diff, .)) %>% 
   rowwise() %>% tidy(model)
 
+#for finding number of significant states, difference in predictive power b/t models
 # offices.ads.test.model <- offices.ads.model %>% select(state_abb, r.squared, adj.r.squared)
 # no.turnout.test.model <- no.turnout.model %>% select(state_abb, r.squared, adj.r.squared) %>% rename(no.turnout.r.squared = r.squared, no.turnout.adj.r.squared = adj.r.squared)
 
 # my.data <- merge(offices.ads.test.model, no.turnout.test.model, by = "state_abb", all = TRUE) %>% mutate(r.diff = r.squared - no.turnout.r.squared, adj.r.diff = adj.r.squared - no.turnout.adj.r.squared)
 
-
 #13 sig w/o ave.030, 13 sig w/ ave.030 + filter on ave.030 n/as
-test.data <- offices.ads.model %>% filter(term == "turnout.pct", p.value < 0.05)
+offices.ads.test.data <- offices.ads.model %>% filter(term == "turnout.pct", p.value < 0.05)
 ```
 
 ```{r}
+#failed multilevel model
 # my.multi.model <- lmer(D_win_margin ~ unem.diff + ave.030 + (1 + turnout.pct + lag.dmargin + White + age65|state), data = state.county.data)
 ```
