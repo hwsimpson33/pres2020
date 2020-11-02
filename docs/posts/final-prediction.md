@@ -1,17 +1,28 @@
-## The mobilization battle: turnout and vote share
-### October 24, 2020
+## Final prediction
+### November 1, 2020
 
 [Back to main page](https://hwsimpson33.github.io/pres2020/)
 
--Explain model basics
--Justification (cite king paper)
--Predictions + intervals
-maps
-predictions table
+I am using a very simple model to predict the 2020 election, but one grounded in political science results and the patterns I have observed in previous weeks. For each state, I have taken the result from the previous presidential election and an average of all high-quality polls in the thirty days before the election and used them to predict election results with a linear regression. I chose to use previous vote share because states often show continuity between elections (as I learned in my [Week 1](week1.md) blog post). I am using polls from just before the election because [political science research](https://gking.harvard.edu/files/abs/variable-abs.shtml) has shown that polls are often very accurate in the days leading up to the election. I am not including the so-called "fundamental" variables like economic performance and incumbency or campaign variables like ad spending and field offices because these factors should be "priced in" to the polls at this late stage in the race. In previous weeks, I have not found significant effects for state-level results and the national economy (see [Week 2](week2.md)). I have also found that ad spending does not foreshadow poll movements but TV mentions of candidates' names does (see [Week 5](week5.md)). Therefore, I have decided to focus on two aspects of the presidential race: the polls, which capture the state of the race and previous state-level vote, which sometimes acts as a corrective to the polls.
+
+This model predicts that *Donald Trump* will win between *164* and *263* electoral college votes with 95% probability, with the most likey result that he wins *203* votes. Conversely, *Joe Biden* will win between *275* and *374* votes with 95% probability, with his most likely tally at *335*. Although a Trump victory (for which he needs *270* electoral college votes) is outside the 95% confidence interval of this model, it is very close to the edge of that interval (263 votes for Trump). This model predicts a Biden victory, but there is still a small chance that Trump will win.
+
+<img src = "../images/won_map_plot.png">
+[Click here to see full-size image.](https://hwsimpson33.github.io/pres2020/images/won_map_plot.png)
+
+This map shows how "safe" states are predicted to be. The more red a state is, the more confident this model is that the state will vote for Trump. The more blue a state is, the greater the probability it will go for Biden
+
+<img src = "../images/uncertainty_map_plot.png">
+[Click here to see full-size image.](https://hwsimpson33.github.io/pres2020/images/uncertainty_map_plot.png)
+
+
 
 -dive into the model itself (formula, interpretation of coefficients)
-coefficients table
 -discuss model validation
+
+-ways to make this more complicated: county-level, poll aggregation, nebraska + maine
+
+coefficients table and fit table
 
 <table style="border-collapse:collapse;" class=table_9844 border=2>
 <thead>
@@ -332,7 +343,18 @@ coefficients table
 </tbody>
 </table>
 
-
+<table style="border-collapse:collapse;" class=table_9844 border=2>
+<thead>
+<tr>
+  <th id="tableHTML_header_1">State</th>
+  <th id="tableHTML_header_2">Term</th>
+  <th id="tableHTML_header_3">Estimate</th>
+  <th id="tableHTML_header_4">Std. error</th>
+  <th id="tableHTML_header_4">p value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
 <td id="tableHTML_column_1">Arkansas</td>
   <td id="tableHTML_column_2">Republican lead in last 30 days</td>
   <td id="tableHTML_column_3">1.1393</td>
@@ -1337,5 +1359,322 @@ coefficients table
 </table>
 
 
-
+<table style="border-collapse:collapse;" class=table_4464 border=2>
+<thead>
+<tr>
+  <th id="tableHTML_header_1">State</th>
+  <th id="tableHTML_header_2">r squared</th>
+  <th id="tableHTML_header_3">Adjusted r squared</th>
+  <th id="tableHTML_header_4">Mean squared error</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td id="tableHTML_column_1">Alabama</td>
+  <td id="tableHTML_column_2">0.9081</td>
+  <td id="tableHTML_column_3">0.8818</td>
+  <td id="tableHTML_column_4">9.5906</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Alaska</td>
+  <td id="tableHTML_column_2">0.7652</td>
+  <td id="tableHTML_column_3">0.6478</td>
+  <td id="tableHTML_column_4">18.8022</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Arizona</td>
+  <td id="tableHTML_column_2">0.9062</td>
+  <td id="tableHTML_column_3">0.875</td>
+  <td id="tableHTML_column_4">17.005</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Arkansas</td>
+  <td id="tableHTML_column_2">0.9572</td>
+  <td id="tableHTML_column_3">0.9429</td>
+  <td id="tableHTML_column_4">17.3802</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">California</td>
+  <td id="tableHTML_column_2">0.9599</td>
+  <td id="tableHTML_column_3">0.951</td>
+  <td id="tableHTML_column_4">14.5651</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Colorado</td>
+  <td id="tableHTML_column_2">0.9282</td>
+  <td id="tableHTML_column_3">0.9123</td>
+  <td id="tableHTML_column_4">17.2602</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Connecticut</td>
+  <td id="tableHTML_column_2">0.9601</td>
+  <td id="tableHTML_column_3">0.9513</td>
+  <td id="tableHTML_column_4">12.2966</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Delaware</td>
+  <td id="tableHTML_column_2">0.8515</td>
+  <td id="tableHTML_column_3">0.802</td>
+  <td id="tableHTML_column_4">24.0262</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">District of Columbia</td>
+  <td id="tableHTML_column_2">0.4774</td>
+  <td id="tableHTML_column_3">-0.0453</td>
+  <td id="tableHTML_column_4">23.5987</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Florida</td>
+  <td id="tableHTML_column_2">0.9178</td>
+  <td id="tableHTML_column_3">0.8943</td>
+  <td id="tableHTML_column_4">16.0469</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Georgia</td>
+  <td id="tableHTML_column_2">0.9555</td>
+  <td id="tableHTML_column_3">0.9427</td>
+  <td id="tableHTML_column_4">14.6736</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Hawaii</td>
+  <td id="tableHTML_column_2">0.8674</td>
+  <td id="tableHTML_column_3">0.8232</td>
+  <td id="tableHTML_column_4">44.9428</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Idaho</td>
+  <td id="tableHTML_column_2">0.4179</td>
+  <td id="tableHTML_column_3">0.2238</td>
+  <td id="tableHTML_column_4">68.5228</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Illinois</td>
+  <td id="tableHTML_column_2">0.8907</td>
+  <td id="tableHTML_column_3">0.8664</td>
+  <td id="tableHTML_column_4">28.136</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Indiana</td>
+  <td id="tableHTML_column_2">0.6293</td>
+  <td id="tableHTML_column_3">0.5233</td>
+  <td id="tableHTML_column_4">32.0221</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Iowa</td>
+  <td id="tableHTML_column_2">0.7858</td>
+  <td id="tableHTML_column_3">0.7322</td>
+  <td id="tableHTML_column_4">20.5895</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Kansas</td>
+  <td id="tableHTML_column_2">0.8678</td>
+  <td id="tableHTML_column_3">0.8384</td>
+  <td id="tableHTML_column_4">15.0552</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Kentucky</td>
+  <td id="tableHTML_column_2">0.8472</td>
+  <td id="tableHTML_column_3">0.8035</td>
+  <td id="tableHTML_column_4">26.0935</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Louisiana</td>
+  <td id="tableHTML_column_2">0.8742</td>
+  <td id="tableHTML_column_3">0.8323</td>
+  <td id="tableHTML_column_4">21.7768</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Maine</td>
+  <td id="tableHTML_column_2">0.6289</td>
+  <td id="tableHTML_column_3">0.5228</td>
+  <td id="tableHTML_column_4">58.0615</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Maryland</td>
+  <td id="tableHTML_column_2">0.8427</td>
+  <td id="tableHTML_column_3">0.8033</td>
+  <td id="tableHTML_column_4">26.8092</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Massachusetts</td>
+  <td id="tableHTML_column_2">0.7621</td>
+  <td id="tableHTML_column_3">0.7092</td>
+  <td id="tableHTML_column_4">46.7406</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Michigan</td>
+  <td id="tableHTML_column_2">0.8829</td>
+  <td id="tableHTML_column_3">0.8536</td>
+  <td id="tableHTML_column_4">14.9445</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Minnesota</td>
+  <td id="tableHTML_column_2">0.4815</td>
+  <td id="tableHTML_column_3">0.3663</td>
+  <td id="tableHTML_column_4">30.7257</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Mississippi</td>
+  <td id="tableHTML_column_2">0.4913</td>
+  <td id="tableHTML_column_3">0.2879</td>
+  <td id="tableHTML_column_4">35.2973</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Missouri</td>
+  <td id="tableHTML_column_2">0.7994</td>
+  <td id="tableHTML_column_3">0.7548</td>
+  <td id="tableHTML_column_4">31.6354</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Montana</td>
+  <td id="tableHTML_column_2">0.9594</td>
+  <td id="tableHTML_column_3">0.9431</td>
+  <td id="tableHTML_column_4">7.0347</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Nebraska</td>
+  <td id="tableHTML_column_2">0.643</td>
+  <td id="tableHTML_column_3">0.5538</td>
+  <td id="tableHTML_column_4">36.8048</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Nevada</td>
+  <td id="tableHTML_column_2">0.8917</td>
+  <td id="tableHTML_column_3">0.8556</td>
+  <td id="tableHTML_column_4">38.3181</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">New Hampshire</td>
+  <td id="tableHTML_column_2">0.7259</td>
+  <td id="tableHTML_column_3">0.6476</td>
+  <td id="tableHTML_column_4">120.2663</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">New Jersey</td>
+  <td id="tableHTML_column_2">0.9115</td>
+  <td id="tableHTML_column_3">0.8919</td>
+  <td id="tableHTML_column_4">29.1894</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">New Mexico</td>
+  <td id="tableHTML_column_2">0.9009</td>
+  <td id="tableHTML_column_3">0.8679</td>
+  <td id="tableHTML_column_4">16.1361</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">New York</td>
+  <td id="tableHTML_column_2">0.9751</td>
+  <td id="tableHTML_column_3">0.9695</td>
+  <td id="tableHTML_column_4">8.7625</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">North Carolina</td>
+  <td id="tableHTML_column_2">0.8798</td>
+  <td id="tableHTML_column_3">0.8531</td>
+  <td id="tableHTML_column_4">27.2689</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">North Dakota</td>
+  <td id="tableHTML_column_2">0.8292</td>
+  <td id="tableHTML_column_3">0.7723</td>
+  <td id="tableHTML_column_4">36.6662</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Ohio</td>
+  <td id="tableHTML_column_2">0.9019</td>
+  <td id="tableHTML_column_3">0.8801</td>
+  <td id="tableHTML_column_4">10.6094</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Oklahoma</td>
+  <td id="tableHTML_column_2">0.8798</td>
+  <td id="tableHTML_column_3">0.8454</td>
+  <td id="tableHTML_column_4">25.5973</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Oregon</td>
+  <td id="tableHTML_column_2">0.919</td>
+  <td id="tableHTML_column_3">0.901</td>
+  <td id="tableHTML_column_4">10.3711</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Pennsylvania</td>
+  <td id="tableHTML_column_2">0.9091</td>
+  <td id="tableHTML_column_3">0.8863</td>
+  <td id="tableHTML_column_4">10.5158</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Rhode Island</td>
+  <td id="tableHTML_column_2">0.9315</td>
+  <td id="tableHTML_column_3">0.912</td>
+  <td id="tableHTML_column_4">12.6548</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">South Carolina</td>
+  <td id="tableHTML_column_2">0.7405</td>
+  <td id="tableHTML_column_3">0.6663</td>
+  <td id="tableHTML_column_4">35.7575</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">South Dakota</td>
+  <td id="tableHTML_column_2">0.807</td>
+  <td id="tableHTML_column_3">0.7519</td>
+  <td id="tableHTML_column_4">33.3406</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Tennessee</td>
+  <td id="tableHTML_column_2">0.8277</td>
+  <td id="tableHTML_column_3">0.7703</td>
+  <td id="tableHTML_column_4">29.2923</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Texas</td>
+  <td id="tableHTML_column_2">0.8369</td>
+  <td id="tableHTML_column_3">0.7903</td>
+  <td id="tableHTML_column_4">12.1371</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Utah</td>
+  <td id="tableHTML_column_2">0.9179</td>
+  <td id="tableHTML_column_3">0.8944</td>
+  <td id="tableHTML_column_4">11.4469</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Vermont</td>
+  <td id="tableHTML_column_2">0.8959</td>
+  <td id="tableHTML_column_3">0.8543</td>
+  <td id="tableHTML_column_4">27.659</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Virginia</td>
+  <td id="tableHTML_column_2">0.9055</td>
+  <td id="tableHTML_column_3">0.8785</td>
+  <td id="tableHTML_column_4">14.2746</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Washington</td>
+  <td id="tableHTML_column_2">0.9448</td>
+  <td id="tableHTML_column_3">0.931</td>
+  <td id="tableHTML_column_4">9.8208</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">West Virginia</td>
+  <td id="tableHTML_column_2">0.9728</td>
+  <td id="tableHTML_column_3">0.965</td>
+  <td id="tableHTML_column_4">12.6105</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Wisconsin</td>
+  <td id="tableHTML_column_2">0.7912</td>
+  <td id="tableHTML_column_3">0.7316</td>
+  <td id="tableHTML_column_4">13.9998</td>
+</tr>
+<tr>
+  <td id="tableHTML_column_1">Wyoming</td>
+  <td id="tableHTML_column_2">0.8837</td>
+  <td id="tableHTML_column_3">0.8062</td>
+  <td id="tableHTML_column_4">53.4837</td>
+</tr>
+</tbody>
+</table>
 [Back to main page](https://hwsimpson33.github.io/pres2020/)
