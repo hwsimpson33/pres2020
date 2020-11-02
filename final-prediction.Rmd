@@ -21,6 +21,7 @@ library(broom)
 library(readxl)
 library(usmap)
 library(dvmisc)
+library(tableHTML)
 
 polls.2020.raw <- read_csv("./president_polls.csv")
 all.data <- read_csv("./all_data.csv")
@@ -189,6 +190,44 @@ for(df in split.data) {
 
   
   states.model <- merge(states.model, my.state.model, all = TRUE)
+  
+# run out of sample fit to see how often states are called correctly
+year_list <- seq(from = 1972, to = 2016, by = 4)
+
+outsamp_dflist <- lapply(year_list, function(year){
+  #true vote shares
+  oos.true <- df$rlead.vote[df$year == year]
+
+  if (length(oos.true) > 0){
+    
+    #dataframes excluding the row (incumbency is backwards as everything is negated)
+    oos.df <- df %>% filter(!(year == year))
+
+    #prediction dataframes
+    oos.p <- df %>% filter(year == year)
+
+    #fundamental model out-of-sample prediction
+    oos.model <- lm(rlead.vote ~ rlead.prev + rlead.030, data = df )
+    oos.pred <- predict(oos.model, oos.p)
+
+    c(year, 
+      margin_error = oos.pred - oos.true, 
+      winner_correct = ((oos.pred > 0) == (oos.true > 0))
+    )
+  }
+})
+
+  outsamp_df <- do.call(rbind, outsamp_dflist)
+# colMeans(abs(outsamp_df[2:4]), na.rm=T) #
+# colMeans(outsamp_df[5:7], na.rm=T) ### classification accuracy
+# 
+# outsamp_df[,c("year","econ_winner_correct","poll_winner_correct","plus_winner_correct")] #
+# 
+# outsamp_dflist <- sapply(year_list, function(year){sapply(state_list, function(state) check_out(year,state))})
+# 
+# outsamp_df <- cbind("year", "state","fund_margin_error",
+#                 "polls_margin_error","plus_margin_error","fund_correct","polls_correct","plus_correct")
+
   loop <- loop + 1
 }
 
@@ -235,6 +274,17 @@ for(df in split.data) {
 states.model.2 <- states.model.2 %>% 
   select(-X0) %>% 
   arrange(state, term)
+```
+
+```{r}
+predict.table.df <- states.model %>% 
+  select(state, my.predict, lwr, upr) %>% 
+  rename(State = state, `Point prediction` = my.predict, `Lower bound` = lwr, `Upper bound` = upr)
+
+predict.table <- tableHTML(predict.table.df, rownames = FALSE, border = 2, round = 4)
+
+print(predict.table, viewer = FALSE)
+
 ```
 
 ```{r}
