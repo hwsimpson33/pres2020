@@ -5,7 +5,7 @@
 
 I am using a very simple model to predict the 2020 election, but one grounded in political science results and the patterns I have observed in previous weeks. For each state, I have taken the result from the previous presidential election and an average of all high-quality polls (polls rated between B/C and A+ by 538) in the thirty days before the election and used them to predict election results with a linear regression. I chose to use previous vote share because states often show continuity between elections (as I learned in my [Week 1](week1.md) blog post). I am using polls from just before the election because [political science research](https://gking.harvard.edu/files/abs/variable-abs.shtml) has shown that polls are often very accurate in the days leading up to the election. I am not including "fundamental" variables like economic performance and incumbency or campaign variables like ad spending and field offices because these factors should be "priced in" to (i.e. incorporated into) the polls at this late stage in the race. In previous weeks, I have not found significant effects for the national economy on state-level results (see [Week 2](week2.md)). I have also found that TV mentions of candidates' names foreshadow poll movements (see [Week 5](week5.md), meaning the effects of TV coverage are already captured by the poll numbers). I have decided to focus on just two aspects of the presidential race: the polls, which capture the state of the race and previous state-level vote, which sometimes acts as a corrective to the polls.
 
-This model predicts that **Donald Trump** will win between **164** and **263** electoral college votes with 95% probability, with the most likely result that he wins **203** votes. Conversely, **Joe Biden** will win between **275** and **374** votes with 95% probability, with his most likely tally at **335**. Although a Trump victory (for which he needs **270** electoral college votes) is outside the 95% confidence interval of this model, it is very close to the edge of that interval (263 votes for Trump). This model predicts a Biden victory, but there is still a small chance that Trump will win. Full results for each state are in the Appendix (Table 1).
+This model predicts that **Donald Trump** will win between **164** and **263** electoral college votes with 95% probability, with the most likely result that he wins **203** votes. Conversely, **Joe Biden** will win between **275** and **374** votes with 95% probability, with his most likely tally at **335**. Although a Trump victory (for which he needs **270** electoral college votes) is outside the 95% confidence interval of this model, it is very close to the edge of that interval (263 votes for Trump). This model predicts a Biden victory, but there is still a small chance that Trump will win. Full results for each state are in the Appendix (Table 1). The model predicts that Trump will win 43.3% and Biden will will 56.7% of the popular vote.
 
 <img src = "../images/won_map_plot.png">
 [Click here to see full-size image.](https://hwsimpson33.github.io/pres2020/images/won_map_plot.png)
@@ -30,7 +30,7 @@ There are lots of ways to make this model more complicated. One could use previo
 ### Appendix: Model tables
 
 Table 1: Full predictions
-<table style="border-collapse:collapse;" class=table_9844 border=2>
+<table style="border-collapse:collapse;" class=table_2436 border=2>
 <thead>
 <tr>
   <th id="tableHTML_header_1">State</th>
@@ -87,12 +87,6 @@ Table 1: Full predictions
   <td id="tableHTML_column_2">-16.9962</td>
   <td id="tableHTML_column_3">-22.3808</td>
   <td id="tableHTML_column_4">-11.6117</td>
-</tr>
-<tr>
-  <td id="tableHTML_column_1">District of Columbia</td>
-  <td id="tableHTML_column_2">-91.3904</td>
-  <td id="tableHTML_column_3">NA</td>
-  <td id="tableHTML_column_4">NA</td>
 </tr>
 <tr>
   <td id="tableHTML_column_1">Florida</td>
@@ -275,12 +269,6 @@ Table 1: Full predictions
   <td id="tableHTML_column_4">-3.3996</td>
 </tr>
 <tr>
-  <td id="tableHTML_column_1">Rhode Island</td>
-  <td id="tableHTML_column_2">-16.6214</td>
-  <td id="tableHTML_column_3">NA</td>
-  <td id="tableHTML_column_4">NA</td>
-</tr>
-<tr>
   <td id="tableHTML_column_1">South Carolina</td>
   <td id="tableHTML_column_2">9.8522</td>
   <td id="tableHTML_column_3">5.3622</td>
@@ -339,12 +327,6 @@ Table 1: Full predictions
   <td id="tableHTML_column_2">-7.8144</td>
   <td id="tableHTML_column_3">-12.1085</td>
   <td id="tableHTML_column_4">-3.5203</td>
-</tr>
-<tr>
-  <td id="tableHTML_column_1">Wyoming</td>
-  <td id="tableHTML_column_2">51.4106</td>
-  <td id="tableHTML_column_3">NA</td>
-  <td id="tableHTML_column_4">NA</td>
 </tr>
 </tbody>
 </table>

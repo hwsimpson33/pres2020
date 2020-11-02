@@ -12,9 +12,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-#ToDo: edit graphics, writeup and code comments, popular vote prediction
 #county-level predictions for Pennsylvania, Nevada, Florida if time
-#https://projects[.]fivethirtyeight.com/polls/president-general/national/
+#polling data source: https://projects[.]fivethirtyeight.com/polls/president-general/national/
+#archive: https://web.archive.org/web/20201102021843/https://projects.fivethirtyeight[.]com/polls/president-general/national/
 
 library(tidyverse)
 library(broom)
@@ -23,11 +23,16 @@ library(usmap)
 library(dvmisc)
 library(tableHTML)
 
+#data from 538
 polls.2020.raw <- read_csv("./president_polls.csv")
+
+#our master state-level dataset
 all.data <- read_csv("./all_data.csv")
 ```
 
 ```{r}
+#format poll data from 538
+#process polls: convert date format, take only highly-graded polls, average over several polls by the same pollster on the same day, change data format so that each poll is one observation rather than two
 polls.2020 <- polls.2020.raw %>% 
   mutate(start_date = as.Date(start_date, tryFormats = c("%m/%d/%y"))) %>% 
   filter(fte_grade %in% c("A+", "A", "A-", "A/B", "B+", "B", "B-", "B/C"), 
@@ -35,11 +40,12 @@ polls.2020 <- polls.2020.raw %>%
          !is.na(state)) %>% 
   select(poll_id, cycle, state, pollster, fte_grade, sample_size, population, start_date, end_date, candidate_party, pct) %>% 
   group_by(poll_id, candidate_party) %>% 
-  mutate(poll.ave = sum(pct)/length(pct)) %>% 
+  mutate(poll.ave = sum(pct)/length(pct)) %>% #several polls by the same pollster on the same day
   select(-pct) %>% 
   distinct() %>% 
   pivot_wider(names_from = candidate_party, values_from = poll.ave)
 
+#get 30-day poll average
 polls.030 <- polls.2020 %>% 
   filter(start_date > as.Date("2020-10-03")) %>% 
   group_by(state) %>% 
@@ -49,6 +55,7 @@ polls.030 <- polls.2020 %>%
   select(state, rlead.030) %>% 
   distinct()
 
+#get more-than-30 day average
 polls.30plus <- polls.2020 %>% 
   filter(start_date < as.Date("2020-10-03")) %>% 
   group_by(state) %>% 
@@ -60,6 +67,7 @@ polls.30plus <- polls.2020 %>%
 
 pollave.2020 <- merge(polls.030, polls.30plus, all = TRUE)
 
+#average polls for states with electoral votes by congressional district (Maine, Nebraska)
 #actually there are state-wide polls...we'll just use those
 # maine.data <- pollave.2020 %>% 
 #   filter(state == "Maine CD-1" | state == "Maine CD-2") %>% 
@@ -78,6 +86,7 @@ nebraska.data <- pollave.2020 %>%
 # pollave.2020 <- merge(pollave.2020, maine.data, all = TRUE)
 pollave.2020 <- merge(pollave.2020, nebraska.data, all = TRUE)
 
+#filter out district-level polls
 pollave.2020 <- pollave.2020 %>% filter(state != "Maine CD-1",
                                         state != "Maine CD-2",
                                         state != "Nebraska CD-1",
@@ -85,6 +94,8 @@ pollave.2020 <- pollave.2020 %>% filter(state != "Maine CD-1",
 ```
 
 ```{r}
+#format data, preliminary models
+#take the things we need from all.data and format the df
 state.data <- all.data %>% 
   select(year, state, R_pv2p, D_pv2p, prev_Rvote, prev_Dvote, ave.30plus, ave.030) %>% 
   rename(rlead.030 = ave.030,
@@ -96,56 +107,63 @@ state.data <- all.data %>%
          rlead.vote = R_pv2p - D_pv2p) %>% 
   select(-R_pv2p, -D_pv2p, -prev_Rvote, -prev_Dvote)
 
+#use all polls to stand in when polls from the last 30 days are not available
+#filter out DC (no polls)
+#this is NOT the dataset used for the actual loop model that produced the results/ charts
+#this was a preliminary exploration
 reg.data <- state.data %>%
   mutate(rlead.030 = case_when(is.na(rlead.030) ~ rlead.30plus,
                                !is.na(rlead.030) ~ rlead.030)) %>% 
   filter(state != "District of Columbia")
 
+#vote = previous vote + 30-day polls
 my.model.1 <- reg.data %>% 
   group_by(state) %>% 
   do(model = lm(rlead.vote ~ rlead.prev + rlead.030, .)) %>% 
   rowwise() %>% glance(model)
 
+#vote = previous vote + 30-day polls + more-than-30-day polls
 my.model.2 <- reg.data %>% 
   group_by(state) %>% 
   do(model = lm(rlead.vote ~ rlead.prev + rlead.030 + rlead.30plus, .)) %>% 
   rowwise() %>% glance(model)
-
-my.model.3 <- reg.data %>% 
-  group_by(state) %>% 
-  do(model = lm(rlead.vote ~ rlead.prev + rlead.030 + as.factor(year), .)) %>% 
-  rowwise() %>% glance(model)
-
 ```
 
 ```{r}
+#format and merge 2020 dataset
+#get 2016 vote results for 2020's previous vote
 vote.2016 <- state.data %>% 
   filter(year == 2016) %>% 
   select(state, rlead.vote) %>% 
   rename(rlead.prev = rlead.vote)
 
+#merge 2016 results with rest of 2020 (polling) data
 data.2020 <- merge(pollave.2020, vote.2016, all = TRUE)
 
+#finish formatting 2020 dataset for prediction: year variable, vote results as N/a
 data.2020 <- data.2020 %>% 
   mutate(year = 2020, 
-         rlead.vote = 0,
+         rlead.vote = 0, #a little hacky but I always have trouble with this
          rlead.vote = na_if(rlead.vote, 0))
 
+#merge 2020 data with the master dataset
 state.data <- rbind(state.data, data.2020)
 ```
 
 ```{r}
+#preparing the new master dataset for regression: impute last 30 day polls using all polls when missing
 reg.full.data <- state.data %>%
   mutate(rlead.030 = case_when(is.na(rlead.030) ~ rlead.30plus,
                                !is.na(rlead.030) ~ rlead.030)) %>% 
   group_by(state)
 
-my.model.1 <- reg.full.data %>% 
-  do(model = lm(rlead.vote ~ rlead.prev + rlead.030, .)) %>% 
-  rowwise() %>% tidy(model) %>% 
-  filter(state == "Alaska")
+#failed attempt to use predict with do() instead of a loop
 
- 
+# my.model.1 <- reg.full.data %>% 
+#   do(model = lm(rlead.vote ~ rlead.prev + rlead.030, .)) %>% 
+#   rowwise() %>% tidy(model) %>% 
+#   filter(state == "Alaska")
+
 # my.predict <- tidy(predict(lm(rlead.vote ~ rlead.prev + rlead.030, data = reg.full.data), 
 #         reg.full.data[reg.full.data$year == 2020,]))
 #   
@@ -153,9 +171,8 @@ my.model.1 <- reg.full.data %>%
 # 
 # test.predict <- predict(my.model.1, state.data[year == 2020])
 # pred_econ_inc <- predict(mod_econ_inc_, dat_econ_inc[dat_econ_inc$year == year,])
-```
 
-```{r}
+#split dataset into separate dfs for each state in preparation for loop
 split.data <- split(reg.full.data, reg.full.data$state)
 ```
 
@@ -181,17 +198,17 @@ for(df in split.data) {
   my.state.model$upr <- state.predict$upr
   my.state.model$mse <- get_mse(my.model)
   
-  my.prev <- df %>% filter(year == 2020)
-  my.prev <- my.prev$rlead.prev
-  
-  my.state.model <- my.state.model %>% 
-    mutate(my.predict = case_when(is.na(my.predict) ~ my.prev,
-                                  !is.na(my.predict) ~ my.predict))
+  # my.prev <- df %>% filter(year == 2020)
+  # my.prev <- my.prev$rlead.prev
+  # 
+  # my.state.model <- my.state.model %>% 
+  #   mutate(my.predict = case_when(is.na(my.predict) ~ my.prev,
+  #                                 !is.na(my.predict) ~ my.predict))
 
   
   states.model <- merge(states.model, my.state.model, all = TRUE)
   
-# run out of sample fit to see how often states are called correctly
+# run out of sample fit (partially working)
 # year_list <- seq(from = 1972, to = 2016, by = 4)
 # 
 # year <- 1972
@@ -232,12 +249,13 @@ for(df in split.data) {
   loop <- loop + 1
 }
 
-states.model <- states.model %>% 
+states.model <- states.model %>%
   select(-X0) %>% 
+  filter(!is.na(my.predict)) %>% 
   arrange(state, term)
 ```
 
-```{r warning=FALSE}
+```{r eval=FALSE, warning=FALSE, include=FALSE}
 
 my.names <- names(split.data)
 states.model.2 <- data.frame(0)
@@ -264,7 +282,8 @@ for(df in split.data) {
   my.prev <- my.prev$rlead.prev
   
   my.state.model <- my.state.model %>% 
-    mutate(my.predict = case_when(is.na(my.predict) ~ my.prev,
+    mutate(fake.my.prev = my.prev - 50,
+           my.predict = case_when(is.na(my.predict) ~ fake.my.prev,
                                   !is.na(my.predict) ~ my.predict))
 
   
@@ -313,21 +332,23 @@ fit.table <- tableHTML(fit.table.df, rownames = FALSE, border = 2, round = 4)
 predict.results <- states.model %>% 
   select(state, my.predict, lwr, upr) %>% 
   distinct() %>% 
-  mutate(interval.size = upr - lwr)
+  mutate(interval.size = upr - lwr,
+         trump.predict = my.predict + 50, 
+         biden.predict = 100 - trump.predict)
 
-predict.results.2 <- states.model.2 %>% 
-  select(state, my.predict, lwr, upr) %>% 
-  distinct() %>% 
-  mutate(interval.size = upr - lwr) %>% 
-  rename(my.predict.2 = my.predict, lwr.2 = lwr, upr.2 = upr, interval.size.2 = interval.size)
+# predict.results.2 <- states.model.2 %>% 
+#   select(state, my.predict, lwr, upr) %>% 
+#   distinct() %>% 
+#   mutate(interval.size = upr - lwr) %>% 
+#   rename(my.predict.2 = my.predict, lwr.2 = lwr, upr.2 = upr, interval.size.2 = interval.size)
 
-my.test <- merge(predict.results, predict.results.2)
-my.test <- my.test %>% mutate(predict.diff = my.predict - my.predict.2,
-                              interval.diff = interval.size - interval.size.2)
-
-my.test %>% ggplot(aes(x = predict.diff, y = interval.diff)) + geom_point() + theme_classic()
-hist(my.test$predict.diff)
-hist(my.test$interval.diff)
+# my.test <- merge(predict.results, predict.results.2)
+# my.test <- my.test %>% mutate(predict.diff = my.predict - my.predict.2,
+#                               interval.diff = interval.size - interval.size.2)
+# 
+# my.test %>% ggplot(aes(x = predict.diff, y = interval.diff)) + geom_point() + theme_classic()
+# hist(my.test$predict.diff)
+# hist(my.test$interval.diff)
 ```
 
 ```{r}
@@ -353,6 +374,21 @@ my.predict.results <- predict.results %>%
 
 predict.results <- merge(predict.results, my.predict.results, all = TRUE)
 
+```
+
+```{r}
+population <- read_excel("./electoralcollege.xlsx", skip = 1, sheet = 2)
+
+predict.results <- merge(predict.results, population, by = "state", all = TRUE)
+
+predict.results <- predict.results %>% 
+  filter(!is.na(my.predict)) %>% 
+  mutate(pop.vote = vep * (my.predict * 0.01),
+         total.pop = sum(vep),
+         nat.pop.vote = sum(pop.vote) / total.pop)
+
+trump.pop.vote <- ((unique(predict.results$nat.pop.vote)) + .5) * 100
+biden.pop.vote <- 100 - trump.pop.vote 
 ```
 
 ```{r}
