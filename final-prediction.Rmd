@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-#ToDo: out-of-sample fit, more graphics (coefficients + fit measures table, predictions + intervals table), writeup and code comments, popular vote prediction
+#ToDo: edit graphics, writeup and code comments, popular vote prediction
 #county-level predictions for Pennsylvania, Nevada, Florida if time
 #https://projects[.]fivethirtyeight.com/polls/president-general/national/
 
@@ -192,34 +192,35 @@ for(df in split.data) {
   states.model <- merge(states.model, my.state.model, all = TRUE)
   
 # run out of sample fit to see how often states are called correctly
-year_list <- seq(from = 1972, to = 2016, by = 4)
-
-outsamp_dflist <- lapply(year_list, function(year){
-  #true vote shares
-  oos.true <- df$rlead.vote[df$year == year]
-
-  if (length(oos.true) > 0){
-    
-    #dataframes excluding the row (incumbency is backwards as everything is negated)
-    oos.df <- df %>% filter(!(year == year))
-
-    #prediction dataframes
-    oos.p <- df %>% filter(year == year)
-
-    #fundamental model out-of-sample prediction
-    oos.model <- lm(rlead.vote ~ rlead.prev + rlead.030, data = df )
-    oos.pred <- predict(oos.model, oos.p)
-
-    c(year, 
-      margin_error = oos.pred - oos.true, 
-      winner_correct = ((oos.pred > 0) == (oos.true > 0))
-    )
-  }
-})
-
-  outsamp_df <- do.call(rbind, outsamp_dflist)
-# colMeans(abs(outsamp_df[2:4]), na.rm=T) #
-# colMeans(outsamp_df[5:7], na.rm=T) ### classification accuracy
+# year_list <- seq(from = 1972, to = 2016, by = 4)
+# 
+# year <- 1972
+# outsamp_dflist <- lapply(year_list, function(year){
+#   #true vote shares
+#   oos.true <- df$rlead.vote[df$year == year]
+# 
+#   if (length(oos.true) > 0){
+#     
+#     #dataframes excluding the row (incumbency is backwards as everything is negated)
+#     oos.df <- df %>% filter(!(year == year))
+# 
+#     #prediction dataframes
+#     oos.p <- df %>% filter(year == year)
+# 
+#     #fundamental model out-of-sample prediction
+#     oos.model <- lm(rlead.vote ~ rlead.prev + rlead.030, data = df )
+#     oos.pred <- predict(oos.model, oos.p)
+# 
+#     c(year, 
+#       margin_error = oos.pred - oos.true, 
+#       winner_correct = ((oos.pred > 0) == (oos.true > 0))
+#     )
+#   }
+# })
+# 
+#   outsamp_df <- do.call(rbind, outsamp_dflist)
+# # colMeans(abs(outsamp_df[2:4]), na.rm=T) #
+# # colMeans(outsamp_df[5:7], na.rm=T) ### classification accuracy
 # 
 # outsamp_df[,c("year","econ_winner_correct","poll_winner_correct","plus_winner_correct")] #
 # 
@@ -278,13 +279,34 @@ states.model.2 <- states.model.2 %>%
 
 ```{r}
 predict.table.df <- states.model %>% 
-  select(state, my.predict, lwr, upr) %>% 
+  select(state, my.predict, lwr, upr) %>%
+  distinct() %>% 
   rename(State = state, `Point prediction` = my.predict, `Lower bound` = lwr, `Upper bound` = upr)
 
 predict.table <- tableHTML(predict.table.df, rownames = FALSE, border = 2, round = 4)
 
-print(predict.table, viewer = FALSE)
+# print(predict.table, viewer = FALSE)
 
+coefficients.table.df <- states.model %>%
+  select(state, term, estimate, std.error, p.value) %>% 
+  mutate(term = case_when(term == "(Intercept)" ~ "Intercept", 
+                             term == "rlead.030" ~ "Republican lead in last 30 days",
+                             term == "rlead.prev" ~ "Republican win/loss margin in previous election")) %>% 
+  filter(!is.na(term)) %>% 
+  rename(State = state, Term = term, Estimate = estimate, `Std. error` = std.error, `p value` = p.value)
+
+coefficients.table <- tableHTML(coefficients.table.df, rownames = FALSE, border = 2, round = 4)
+
+# print(coefficients.table, viewer = FALSE)
+
+fit.table.df <- states.model %>% 
+  select(state, r.squared, adj.r.squared, mse) %>%
+  filter(!is.na(r.squared)) %>% 
+  rename(State = state, `r squared` = r.squared, `Adjusted r squared` = adj.r.squared, `Mean squared error` = mse)
+
+fit.table <- tableHTML(fit.table.df, rownames = FALSE, border = 2, round = 4)
+
+# print(fit.table, viewer = FALSE)
 ```
 
 ```{r}
@@ -317,16 +339,20 @@ predict.results <- predict.results %>% mutate(won = case_when(my.predict > 0 ~ 1
                                                               my.predict < 0 ~ 0),
                                               total.votes = sum(won * ec.votes)) 
 
-my.predict.results <- predict.results %>%  
-  filter(!is.na(lwr)) %>% 
+my.predict.results <- predict.results %>% 
   mutate(won.lwr = case_when(lwr > 0 ~ 1,
                              lwr < 0 ~ 0),
+         won.lwr = case_when(!is.na(won.lwr) ~ won.lwr,
+                             is.na(won.lwr) ~ won),
          total.votes.lwr = sum(won.lwr * ec.votes),
          won.upr = case_when(upr > 0 ~ 1,
                              upr < 0 ~ 0),
+         won.upr = case_when(!is.na(won.upr) ~ won.upr,
+                             is.na(won.upr) ~ won), 
          total.votes.upr = sum(won.upr * ec.votes))
 
 predict.results <- merge(predict.results, my.predict.results, all = TRUE)
+
 ```
 
 ```{r}
@@ -351,8 +377,8 @@ won.map.plot <- plot_usmap(data = plot.data, regions = "state", values = "won") 
                        breaks = c(0, 1),
                        name = "Won") +
   theme_void() +
-  labs(title = "title", 
-       subtitle  = "subtitle")
+  labs(title = "Predicted victory by state", 
+       subtitle  = "Biden is predicted to win blue states, Trump is predicted to win red states")
 won.map.plot
 
 ggsave("docs/images/won_map_plot.png", plot = won.map.plot, height = 5, width = 7.5)
@@ -370,10 +396,11 @@ uncertainty.map.plot <- plot_usmap(data = plot.data, regions = "state", values =
   scale_fill_gradient2(high = "red", 
                        mid = "purple",
                        low = "blue",
-                       name = "Certainty") +
+                       name = "Distance") +
   theme_void() +
-  labs(title = "title", 
-       subtitle  = "subtitle")
+  labs(title = "Projected distance from 50% (normalized) by state", 
+       subtitle = "Gray states do not have 2020 polls")
 uncertainty.map.plot
+ggsave("docs/images/uncertainty_map_plot.png", plot = uncertainty.map.plot, height = 5, width = 7.5)
 
 ```
