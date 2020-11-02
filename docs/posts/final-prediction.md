@@ -24,7 +24,7 @@ state margin for Rep. candidate = previous margin for Rep. candidate + average o
 
 I ran fifty separate regressions, one for each state (full results are in the Appendix, table 2). In this model specification, the coefficient on the previous margin represents the amount by which Republican vote margin is expected to increase given a one point increase in the previous Republican vote margin. The coefficient on the state polls average represents the expected increase in Republican vote margin given a one point increase in the amount that the Republican candidate is favored by the poll. 
 
-In order to validate this model, I measured the mean squared error (in-sample fit) and r2.
+In order to validate this model, I measured the mean squared error (in-sample fit) and r2. Measuring out-of-sample fit is technically feasible, but the results are not very illuminating for this model because of the large number of regressions. Overall, this model does a fair job of predicting historical election results
 
 There are lots of ways to make this model more complicated. One could use previous county-level results and state-level polls to predict county-level vote share, and then aggregate up to the state level. A sophisticated approach would be to disaggregate state-level polling using county-level demographics and then use these estimates to project county-level vote share. Another way to complicate this model is to aggregate polls in a more complicated way. Both of these ideas require collecting data from the polls themselves, rather than a polling aggregator like 538, and so proved infeasible given the time alloted. For future elections, however, I plan to explore these approaches.
 
