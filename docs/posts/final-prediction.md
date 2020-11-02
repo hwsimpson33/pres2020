@@ -5,7 +5,7 @@
 
 I am using a very simple model to predict the 2020 election, but one grounded in political science results and the patterns I have observed in previous weeks. For each state, I have taken the result from the previous presidential election and an average of all high-quality polls (polls rated between B/C and A+ by 538) in the thirty days before the election and used them to predict election results with a linear regression. I chose to use previous vote share because states often show continuity between elections (as I learned in my [Week 1](week1.md) blog post). I am using polls from just before the election because [political science research](https://gking.harvard.edu/files/abs/variable-abs.shtml) has shown that polls are often very accurate in the days leading up to the election. I am not including the so-called "fundamental" variables like economic performance and incumbency or campaign variables like ad spending and field offices because these factors should be "priced in" to the polls at this late stage in the race. In previous weeks, I have not found significant effects for state-level results and the national economy (see [Week 2](week2.md)). I have also found that ad spending does not foreshadow poll movements but TV mentions of candidates' names does (see [Week 5](week5.md)). Therefore, I have decided to focus on two aspects of the presidential race: the polls, which capture the state of the race and previous state-level vote, which sometimes acts as a corrective to the polls.
 
-This model predicts that *Donald Trump* will win between *164* and *263* electoral college votes with 95% probability, with the most likey result that he wins *203* votes. Conversely, *Joe Biden* will win between *275* and *374* votes with 95% probability, with his most likely tally at *335*. Although a Trump victory (for which he needs *270* electoral college votes) is outside the 95% confidence interval of this model, it is very close to the edge of that interval (263 votes for Trump). This model predicts a Biden victory, but there is still a small chance that Trump will win.
+This model predicts that **Donald Trump** will win between **164** and **263** electoral college votes with 95% probability, with the most likey result that he wins **203** votes. Conversely, **Joe Biden** will win between **275** and **374** votes with 95% probability, with his most likely tally at **335**. Although a Trump victory (for which he needs **270** electoral college votes) is outside the 95% confidence interval of this model, it is very close to the edge of that interval (263 votes for Trump). This model predicts a Biden victory, but there is still a small chance that Trump will win.
 
 <img src = "../images/won_map_plot.png">
 [Click here to see full-size image.](https://hwsimpson33.github.io/pres2020/images/won_map_plot.png)
@@ -17,9 +17,7 @@ This map shows how "safe" states are predicted to be. The more red a state is, t
 
 The formula I used was: 
 
-```
-state margin for Rep. candidate = previous margin for Rep. candidate + average of state polls in 30 days prior to election
-```
+>state margin for Rep. candidate = previous margin for Rep. candidate + average of state polls in 30 days prior to election
 
 I ran fifty separate regressions, one for each state (full results are in the Appendix, table 2). In this model specification, the coefficient on the previous margin represents the amount by which Republican vote margin is expected to increase given a one point increase in the previous Republican vote margin. The coefficient on the state polls average represents the expected increase in Republican vote margin given a one point increase in the amount that the Republican candidate is favored by the poll. 
 
