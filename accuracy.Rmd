@@ -1,0 +1,41 @@
+---
+title: "accuracy"
+author: "Helen Simpson"
+date: "11/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+rm(list = ls())
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+
+```
+
+```{r}
+
+predict.raw <- read_csv("./predict_table.csv") %>% rename(state = State)
+results.raw <- read_csv("./popvote_bystate_1948-2020.csv") %>% filter(year == 2020)
+
+my.data <- merge(predict.raw, results.raw, all = TRUE) %>% 
+  select(-`Lower bound`, 
+         -`Upper bound`, 
+         -total, 
+         -D, -R, 
+         -year) %>% 
+  mutate(results.margin = (R_pv2p - D_pv2p) * 100,
+         diff = `Point prediction` - results.margin)
+
+summary(my.data$diff)
+
+test.data <- my.data %>% filter(diff > 10 | diff < -10)
+
+hist(my.data$diff)
+
+my.plot <- my.data %>% ggplot(aes(x = diff)) + geom_histogram(bins = 6) + theme_classic()
+my.plot
+```
+
