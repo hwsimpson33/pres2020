@@ -38,4 +38,6 @@ hist(my.data$diff)
 my.plot <- my.data %>% ggplot(aes(x = diff)) + geom_histogram(bins = 6) + theme_classic()
 my.plot
 ```
+```{r}
 
+```
