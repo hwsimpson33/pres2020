@@ -12,7 +12,8 @@ rm(list = ls())
 knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
-
+library(tableHTML)
+library(kableExtra)
 ```
 
 ```{r}
@@ -38,7 +39,30 @@ hist(my.data$diff)
 my.plot <- my.data %>% ggplot(aes(x = diff)) + geom_histogram(bins = 6) + theme_classic()
 my.plot
 ```
+
 ```{r}
-#ToDo: summary stats on diff, # of states w/ zero inside margin, table of states w/ biggest errors, table of all states (link to only), calculate model confidence (z score) for each state, plot against actual victory margin, # of polls
+my.table.data <- my.data %>% 
+  rename(`Point prediction (Republican margin)` = `Point prediction`,
+         `Result (Republican margin)` = results.margin,
+         Difference = diff, 
+         State = state) %>% 
+  select(-R_pv2p, -D_pv2p) %>% 
+  filter(!is.na(Difference))
+  
+worst.results.data <- my.table.data %>% filter(Difference > 10 | Difference < -10)
+
+kable(my.table.data) %>% 
+  kable_styling(bootstrap_options = c("striped", "bordered")) %>% 
+  kable_paper(full_width = FALSE) %>% 
+  save_kable("./docs/images/results_table.png")
+
+worst.results.table <- tableHTML(worst.results.data, rownames = FALSE, border = 2, round = 4)
+
+print(worst.results.table, viewer = FALSE)
+  
+```
+
+```{r}
+#ToDo: calculate model confidence (z score) for each state, plot against actual victory margin, # of polls
 
 ```
