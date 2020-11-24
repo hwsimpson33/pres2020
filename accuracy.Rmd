@@ -27,7 +27,7 @@ my.data <- merge(predict.raw, results.raw, all = TRUE) %>%
          -year) %>% 
   mutate(results.margin = (R_pv2p - D_pv2p) * 100,
          diff = `Point prediction` - results.margin, 
-         my.sd = `Upper bound` - `Point prediction`/ 2,
+         my.sd = abs(`Upper bound` - `Point prediction`)/ 1.96,
          my.interval = abs(`Point prediction`/ my.sd))
 
 summary(my.data$diff)
