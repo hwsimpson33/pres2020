@@ -38,4 +38,7 @@ hist(my.data$diff)
 my.plot <- my.data %>% ggplot(aes(x = diff)) + geom_histogram(bins = 6) + theme_classic()
 my.plot
 ```
+```{r}
+#ToDo: summary stats on diff, # of states w/ zero inside margin, table of states w/ biggest errors, table of all states (link to only), calculate model confidence (z score) for each state, plot against actual victory margin, # of polls
 
+```
