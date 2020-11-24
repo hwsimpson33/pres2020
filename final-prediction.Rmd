@@ -15,6 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 #county-level predictions for Pennsylvania, Nevada, Florida if time
 #polling data source: https://projects[.]fivethirtyeight.com/polls/president-general/national/
 #archive: https://web.archive.org/web/20201102021843/https://projects.fivethirtyeight[.]com/polls/president-general/national/
+#for some reason, broom::glance() doesn't work on my new computer, but works on my old computer. This may have to do with package updating? In any case, if the code doesn't run for you, that may be why. Sorry.
 
 library(tidyverse)
 library(broom)
@@ -101,6 +102,7 @@ pollave.2020 <- pollave.2020 %>% filter(state != "Maine CD-1",
 #format data, preliminary models
 
 #take the things we need from all.data and format the df
+#new.30sum and new.30plus.sum aren't used, but allow for these columns to be merged in the 2020 dataset so that these values can be carried through the data cleaning + merging process for use in the post-election analysis
 state.data <- all.data %>% 
   select(year, state, R_pv2p, D_pv2p, prev_Rvote, prev_Dvote, ave.30plus, ave.030) %>% 
   rename(rlead.030 = ave.030,
@@ -109,7 +111,9 @@ state.data <- all.data %>%
          !is.na(prev_Rvote), 
          year >= 1972) %>% 
   mutate(rlead.prev = prev_Rvote - prev_Dvote,
-         rlead.vote = R_pv2p - D_pv2p) %>% 
+         rlead.vote = R_pv2p - D_pv2p,
+         new.30sum = 0, 
+         new.30plus.sum = 0) %>% 
   select(-R_pv2p, -D_pv2p, -prev_Rvote, -prev_Dvote)
 
 #use all polls to stand in when polls from the last 30 days are not available
@@ -159,8 +163,15 @@ state.data <- rbind(state.data, data.2020)
 ```{r}
 #preparing the new master dataset for regression: impute last 30 day polls using all polls when missing
 reg.full.data <- state.data %>%
-  mutate(rlead.030 = case_when(is.na(rlead.030) ~ rlead.30plus,
-                               !is.na(rlead.030) ~ rlead.030)) %>% 
+  mutate(used.poll.sum = case_when(!is.na(new.30sum) ~ new.30sum,
+                                   is.na(new.30sum) ~ new.30plus.sum),
+         rlead.030 = case_when(is.na(rlead.030) ~ rlead.30plus,
+                               !is.na(rlead.030) ~ rlead.030))
+
+used.poll.df <- reg.full.data %>% filter(year == 2020) %>% select(state, used.poll.sum)
+write.csv(used.poll.df, "./used_poll_sum.csv", row.names = FALSE)
+
+reg.full.data <- reg.full.data %>% select(-new.30sum, -new.30plus.sum, -used.poll.sum) %>% 
   group_by(state)
 
 #failed attempt to use predict with do() instead of a loop

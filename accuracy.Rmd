@@ -17,58 +17,115 @@ library(kableExtra)
 ```
 
 ```{r}
+#this chunk reads in data and makes the dataset for analyzing results
 
+#read in data
 predict.raw <- read_csv("./predict_table.csv") %>% rename(state = State)
 results.raw <- read_csv("./popvote_bystate_1948-2020.csv") %>% filter(year == 2020)
+poll.sums <- read_csv("./used_poll_sum.csv")
 
-my.data <- merge(predict.raw, results.raw, all = TRUE) %>% 
+#merge predicted and results datasets, calculate probability of winning based on prediction intervals
+results.data <- merge(predict.raw, results.raw, all = TRUE) %>%
   select(-total, 
          -D, -R, 
          -year) %>% 
   mutate(results.margin = (R_pv2p - D_pv2p) * 100,
          diff = `Point prediction` - results.margin, 
          my.sd = abs(`Upper bound` - `Point prediction`)/ 1.96,
-         my.interval = abs(`Point prediction`/ my.sd),
          prob = pnorm(0, mean = `Point prediction`, sd = my.sd))
 
-summary(my.data$diff)
+#merge in data on # of polls used to predict each state
+results.data <- merge(results.data, poll.sums, all = TRUE)
 
-test.data <- my.data %>% filter(diff > 10 | diff < -10)
-
-hist(my.data$diff)
-
-my.plot <- my.data %>% ggplot(aes(x = diff)) + geom_histogram(bins = 6) + theme_classic()
-my.plot
+#generate a boolean variable that is true if the actual result was outside the predictive interval and false if the result was inside the predictive interval
+results.data <- results.data %>% 
+  mutate(outside = case_when((results.margin > `Upper bound` | results.margin < `Lower bound`) ~ TRUE,
+                             (results.margin < `Upper bound` & results.margin > `Lower bound`) ~ FALSE))
 ```
 
 ```{r}
-my.table.data <- my.data %>% 
+#this chunk generates tables used in the accuracy.md blog post
+
+#summary stats for diff, the difference between actual and predicted (point) results
+# summary(results.data$diff)
+
+#histogram of errors
+error.hist.plot <- results.data %>% ggplot(aes(x = diff)) + geom_histogram(bins = 6) + theme_classic()
+error.hist.plot
+
+#table of predicted and result for all states
+results.table.data <- results.data %>% 
   rename(`Point prediction (Republican margin)` = `Point prediction`,
          `Result (Republican margin)` = results.margin,
          Difference = diff, 
          State = state) %>% 
-  select(-R_pv2p, -D_pv2p) %>% 
+  select(-R_pv2p, -D_pv2p, -my.sd, -prob, -used.poll.sum, -outside) %>% 
   filter(!is.na(Difference))
-  
-worst.results.data <- my.table.data %>% filter(Difference > 10 | Difference < -10)
 
-kable(my.table.data) %>% 
+#save this table
+kable(results.table.data) %>% 
   kable_styling(bootstrap_options = c("striped", "bordered")) %>% 
   kable_paper(full_width = FALSE) %>% 
   save_kable("./docs/images/results_table.png")
 
-worst.results.table <- tableHTML(worst.results.data, rownames = FALSE, border = 2, round = 4, caption = "States I missed by more than 10%")
+#df with only the states that were more than 10 points off, generate HTML table
+worst.results.data <- results.table.data %>% filter(Difference > 10 | Difference < -10)
 
-print(worst.results.table, viewer = FALSE)
-  
+worst.results.table <- tableHTML(worst.results.data, 
+                                 rownames = FALSE, border = 2, round = 4, 
+                                 caption = "States I missed by more than 10%")
+
+#turn this on if you want to print the HTML table, then copy and paste it from output to your md file
+# print(worst.results.table, viewer = FALSE)
 ```
 
 ```{r}
-plot.0 <- my.data %>% ggplot(aes(x = `Point prediction`, y = results.margin)) + geom_point() + geom_abline(slope = 1) + theme_classic()
+#various plots and histograms trying to diagnose the problem in my model
+
+#x = predicted, y = actual, color = # of polls used to generate prediction, errorbars for confidence interval, line is x = y
+plot.0 <- results.data %>% ggplot(aes(x = `Point prediction`, y = results.margin, color = used.poll.sum)) +
+  geom_point() + 
+  geom_errorbar(aes(x = `Point prediction`, ymin = `Lower bound`, ymax = `Upper bound`)) + 
+  geom_abline(slope = 1) + theme_classic()
 plot.0
-plot.1 <- my.data %>% ggplot(aes(x = prob, y = results.margin)) + geom_point() + theme_classic()
+
+#x = probabilty of Trump losing, y = actual margin for Trump, size = # of polls used to generate prediction, color = outside confidence interval?
+plot.1 <- results.data %>% ggplot(aes(x = prob, y = results.margin, size = used.poll.sum, color = outside)) +
+  geom_point() + theme_classic()
 plot.1
 
-#ToDo: plot against actual victory margin, # of polls
+#x = standard deviation, y = actual results, size = # of polls use, color = outside confidence interval?
+plot.2 <- results.data %>% ggplot(aes(x = my.sd, y = results.margin, size = used.poll.sum, color = outside)) +
+  geom_point() + theme_classic()
+plot.2
 
+#histogram of actual victory margin for Trump
+hist.1 <- results.data %>% filter(!is.na(`Point prediction`)) %>% 
+  ggplot(aes(x = results.margin)) +
+  geom_histogram(bins = 5) + 
+  theme_classic() + labs(title = "All data")
+hist.1
+
+#same, but only for states that were outside the predictive interval
+hist.2 <- results.data %>% filter(outside == TRUE) %>% 
+  ggplot(aes(x = results.margin)) + 
+  geom_histogram(bins = 5) + 
+  theme_classic() + labs(title = "Outside interval")
+hist.2
+
+#histogram of size of predictive interval
+hist.3 <- results.data %>% mutate(my.var = `Point prediction` - `Lower bound`) %>% 
+  ggplot(aes(x = my.var)) + 
+  geom_histogram(bins = 10) + theme_classic()
+hist.3
+
+#histogram of the difference between actual and predicted
+hist.4 <- results.data %>% ggplot(aes(x = diff)) + 
+  geom_histogram(bins = 10) + theme_classic()
+hist.4
+
+#map showing which states were inside and outside the predictive interval. TRUE -> outside interval
+incorrect.map <- plot_usmap(data = results.data, regions = "state", values = "outside") +
+  theme_void()
+incorrect.map
 ```
