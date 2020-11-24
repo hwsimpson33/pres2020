@@ -56,13 +56,15 @@ kable(my.table.data) %>%
   kable_paper(full_width = FALSE) %>% 
   save_kable("./docs/images/results_table.png")
 
-worst.results.table <- tableHTML(worst.results.data, rownames = FALSE, border = 2, round = 4)
+worst.results.table <- tableHTML(worst.results.data, rownames = FALSE, border = 2, round = 4, caption = "States I missed by more than 10%")
 
 print(worst.results.table, viewer = FALSE)
   
 ```
 
 ```{r}
+my.data <- 
+
 #ToDo: calculate model confidence (z score) for each state, plot against actual victory margin, # of polls
 
 ```
