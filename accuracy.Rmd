@@ -28,7 +28,8 @@ my.data <- merge(predict.raw, results.raw, all = TRUE) %>%
   mutate(results.margin = (R_pv2p - D_pv2p) * 100,
          diff = `Point prediction` - results.margin, 
          my.sd = abs(`Upper bound` - `Point prediction`)/ 1.96,
-         my.interval = abs(`Point prediction`/ my.sd))
+         my.interval = abs(`Point prediction`/ my.sd),
+         prob = pnorm(0, mean = `Point prediction`, sd = my.sd))
 
 summary(my.data$diff)
 
@@ -63,8 +64,11 @@ print(worst.results.table, viewer = FALSE)
 ```
 
 ```{r}
-my.data <- 
+plot.0 <- my.data %>% ggplot(aes(x = `Point prediction`, y = results.margin)) + geom_point() + geom_abline(slope = 1) + theme_classic()
+plot.0
+plot.1 <- my.data %>% ggplot(aes(x = prob, y = results.margin)) + geom_point() + theme_classic()
+plot.1
 
-#ToDo: calculate model confidence (z score) for each state, plot against actual victory margin, # of polls
+#ToDo: plot against actual victory margin, # of polls
 
 ```

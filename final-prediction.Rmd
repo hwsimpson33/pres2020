@@ -41,7 +41,8 @@ polls.2020 <- polls.2020.raw %>%
          !is.na(state)) %>% 
   select(poll_id, cycle, state, pollster, fte_grade, sample_size, population, start_date, end_date, candidate_party, pct) %>% 
   group_by(poll_id, candidate_party) %>% 
-  mutate(poll.ave = sum(pct)/length(pct)) %>% #several polls by the same pollster on the same day
+  mutate(poll.ave = sum(pct)/length(pct),
+         poll.num = length(pct)) %>% #several polls by the same pollster on the same day
   select(-pct) %>% 
   distinct() %>% 
   pivot_wider(names_from = candidate_party, values_from = poll.ave)
@@ -52,8 +53,9 @@ polls.030 <- polls.2020 %>%
   group_by(state) %>% 
   arrange(state) %>% 
   mutate(rlead = REP - DEM,
-         rlead.030 = sum(rlead / length(rlead))) %>% 
-  select(state, rlead.030) %>% 
+         rlead.030 = sum(rlead / length(rlead)),
+         new.30sum = sum(poll.num)) %>% 
+  select(state, rlead.030, new.30sum) %>% 
   distinct()
 
 #get more-than-30 day average
@@ -62,8 +64,9 @@ polls.30plus <- polls.2020 %>%
   group_by(state) %>% 
   arrange(state) %>% 
   mutate(rlead = REP - DEM,
-         rlead.30plus = sum(rlead / length(rlead))) %>% 
-  select(state, rlead.30plus) %>% 
+         rlead.30plus = sum(rlead / length(rlead)),
+         new.30plus.sum = sum(poll.num)) %>% 
+  select(state, rlead.30plus, new.30plus.sum) %>% 
   distinct()
 
 pollave.2020 <- merge(polls.030, polls.30plus, all = TRUE)
@@ -122,7 +125,7 @@ reg.data <- state.data %>%
 my.model.1 <- reg.data %>% 
   group_by(state) %>% 
   do(model = lm(rlead.vote ~ rlead.prev + rlead.030, .)) %>% 
-  rowwise() %>% glance(model)
+  rowwise() %>% tidy(model)
 
 #vote = previous vote + 30-day polls + more-than-30-day polls
 my.model.2 <- reg.data %>% 
