@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 #copied from section code
+#quanteda doesn't work on my old computer
 
 library(quanteda) ## package for analyzing text-as-data
 library(tidyverse)
