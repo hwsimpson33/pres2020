@@ -1,0 +1,235 @@
+---
+title: "narrative"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+rm(list = ls())
+
+# Narrative: Republican TV (Fox) coverage of foreign interference allegations was different
+# google trends on disinfo
+
+# Less coverage of foreign interference
+# More coverage of China, less coverage of Russia
+
+# To what extent do FIAT attributions Granger-cause rep vs. dem TV coverage -> they don't
+# is there a difference b/t Russia and China allegations -> no
+
+# To what extent do FIAT attributions Granger-cause rep vs. dem polling -> they don't
+# To what extent does TV coverage Granger-cause rep vs. dem polling -> out of scope
+
+# coverage of allegations of fraud (image) -> no difference
+
+#date range from FIAT: from 11-01-2018 to today
+
+library(tidyverse)
+library(lmtest)
+library(lubridate)
+library(naniar)
+
+fiat.raw <- read_csv("./gov1347_fiat_data.csv")
+fiat.russia <- fiat.raw %>% filter(disinformant1 == "Russia" | disinformant2 == "Russia" | disinformant3 == "Russia")
+fiat.china <- fiat.raw %>% filter(disinformant1 == "China" | disinformant2 == "China" | disinformant3 == "China")
+
+tv.election.interfere.data.raw <- read_csv("./tvnews_20201210042101.csv")
+```
+
+``` {r}
+#code copied from section5.Rmd
+polls.raw <- read_csv("./pollavg_1948-2020.csv") %>% 
+  filter(year == 2020) %>% 
+  rename(my.date = poll_date) %>% 
+  dplyr::select(-candidate_name, -before_convention, 
+                -days_left, -weeks_left, -year, -avg_support_adj) %>%
+  group_by(my.date) %>% 
+  arrange(my.date) %>% #just in case - for when we ungroup them
+  ungroup() %>% #so that dplyr::lag will work
+  spread(key = party, value = avg_support) %>% 
+  mutate(democrat = case_when(is.na(democrat) ~ dplyr::lag(democrat), #this is a little hacky but it works
+                              !is.na(democrat) ~ democrat))%>% #if you have two n/as, run it twice!
+  mutate(republican = case_when(is.na(republican) ~ dplyr::lag(republican), 
+                              !is.na(republican) ~ republican)) %>% 
+  filter(!is.na(democrat)) #no dem data for the first day, just drop the obs
+```
+
+```{r}
+tv.election.interfere.data <- tv.election.interfere.data.raw %>% pivot_wider(names_from = Query, values_from = Value)%>% 
+  dplyr::select(-Unit) %>% 
+  rename(msnbc = "text=\"election\" AND text=\"interfere\" AND channel=\"MSNBC\"",
+         fox = "text=\"election\" AND text=\"interfere\" AND channel=\"FOX\"",
+         my.date = Time)
+
+fiat.tv.data <- merge(fiat.raw, tv.election.interfere.data, all = TRUE) %>%
+  replace(is.na(.), 0) 
+
+my.data <- merge(fiat.tv.data, polls.raw, all = TRUE) %>% 
+  mutate(fiat.indicator = case_when(total_engagement == 0 ~ 0,
+                                    total_engagement > 0 ~ 1)) %>% 
+  mutate(my.week = week(my.date),
+         year = year(my.date)) %>% 
+  replace(is.na(.), 0) %>% 
+  group_by(year, my.week) %>% 
+  mutate(week.fiat = sum(total_engagement),
+         week.msnbc = sum(msnbc),
+         week.fox = sum(fox),
+         week.cases = sum(fiat.indicator),
+         week.dem = sum(democrat)/length(democrat),
+         week.rep = sum(republican)/length(republican)) %>% 
+  select(-my.sum, -total_engagement, -msnbc, -fox, 
+         -fiat.indicator, -my.date, -democrat, -republican) %>% 
+  distinct() %>% 
+  replace_with_na(replace = list(week.dem = 0, week.rep = 0))
+```
+
+```{r}
+grangertest(week.msnbc ~ week.fiat, order = 1, data = my.data) #p = 0.34
+grangertest(week.msnbc ~ week.fiat, order = 2, data = my.data) #p = 0.55
+grangertest(week.msnbc ~ week.fiat, order = 3, data = my.data) #p = 0.71
+grangertest(week.msnbc ~ week.fiat, order = 4, data = my.data) #p = 0.83
+grangertest(week.msnbc ~ week.fiat, order = 5, data = my.data) #p = 0.53
+
+grangertest(week.fox ~ week.fiat, order = 1, data = my.data) #p = 0.77
+grangertest(week.fox ~ week.fiat, order = 2, data = my.data) #p = 0.86
+grangertest(week.fox ~ week.fiat, order = 3, data = my.data) #p = 0.09.
+grangertest(week.fox ~ week.fiat, order = 4, data = my.data) #p = 0.018*
+grangertest(week.fox ~ week.fiat, order = 5, data = my.data) #p = 0.01*
+
+
+cor.test(my.data$week.fiat, my.data$week.msnbc) #cor = .38 (.21, .53)
+cor.test(my.data$week.fiat, my.data$week.fox) #cor = .29 (.11, .46)
+
+grangertest(msnbc ~ fiat.indicator, order = 1, data = my.data) #p = 0.16
+grangertest(msnbc ~ fiat.indicator, order = 2, data = my.data) #p = 0.28
+grangertest(msnbc ~ fiat.indicator, order = 3, data = my.data) #p = 0.31
+grangertest(msnbc ~ fiat.indicator, order = 4, data = my.data) #p = 0.18
+grangertest(msnbc ~ fiat.indicator, order = 5, data = my.data) #p = 0.27
+
+grangertest(fox ~ fiat.indicator, order = 1, data = my.data) #p = 0.70
+grangertest(fox ~ fiat.indicator, order = 2, data = my.data) #p = 0.69
+grangertest(fox ~ fiat.indicator, order = 3, data = my.data) #p = 0.55
+grangertest(fox ~ fiat.indicator, order = 4, data = my.data) #p = 0.64
+grangertest(fox ~ fiat.indicator, order = 5, data = my.data) #p = 0.47
+
+grangertest(week.dem ~ week.fiat, order = 1, data = my.data) #p = 0.15
+grangertest(week.dem ~ week.fiat, order = 2, data = my.data) #p = 0.33
+grangertest(week.dem ~ week.fiat, order = 3, data = my.data) #p = 0.31
+grangertest(week.dem ~ week.fiat, order = 4, data = my.data) #p = 0.12
+grangertest(week.dem ~ week.fiat, order = 5, data = my.data) #p = 0.06.
+
+grangertest(week.rep ~ week.fiat, order = 1, data = my.data) #p = 0.996
+grangertest(week.rep ~ week.fiat, order = 2, data = my.data) #p = 0.27
+grangertest(week.rep ~ week.fiat, order = 3, data = my.data) #p = 0.035*
+grangertest(week.rep ~ week.fiat, order = 4, data = my.data) #p = 0.107
+grangertest(week.rep ~ week.fiat, order = 5, data = my.data) #p = 0.26
+
+```
+
+
+```{r}
+
+#RUSSIA CASES ONLY
+fiat.tv.russia.data <- merge(fiat.russia, tv.election.interfere.data, all = TRUE) %>%
+  replace(is.na(.), 0) 
+
+my.russia.data <- merge(fiat.tv.russia.data, polls.raw, all = TRUE) %>% 
+  mutate(fiat.indicator = case_when(total_engagement == 0 ~ 0,
+                                    total_engagement > 0 ~ 1)) %>% 
+  mutate(my.week = week(my.date),
+         year = year(my.date)) %>% 
+  replace(is.na(.), 0) %>% 
+  group_by(year, my.week) %>% 
+  mutate(week.fiat = sum(total_engagement),
+         week.msnbc = sum(msnbc),
+         week.fox = sum(fox),
+         week.cases = sum(fiat.indicator),
+         week.dem = sum(democrat)/length(democrat),
+         week.rep = sum(republican)/length(republican)) %>% 
+  select(-my.sum, -total_engagement, -msnbc, -fox, 
+         -fiat.indicator, -my.date, -democrat, -republican) %>% 
+  distinct() %>% 
+  replace_with_na(replace = list(week.dem = 0, week.rep = 0))
+
+grangertest(week.msnbc ~ week.fiat, order = 1, data = my.russia.data) #p = 0.66
+grangertest(week.msnbc ~ week.fiat, order = 2, data = my.russia.data) #p = 0.14
+grangertest(week.msnbc ~ week.fiat, order = 3, data = my.russia.data) #p = 0.25
+grangertest(week.msnbc ~ week.fiat, order = 4, data = my.russia.data) #p = 0.72
+grangertest(week.msnbc ~ week.fiat, order = 5, data = my.russia.data) #p = 0.12
+
+grangertest(week.fox ~ week.fiat, order = 1, data = my.russia.data) #p = 0.76
+grangertest(week.fox ~ week.fiat, order = 2, data = my.russia.data) #p = 0.24
+grangertest(week.fox ~ week.fiat, order = 3, data = my.russia.data) #p = 0.38
+grangertest(week.fox ~ week.fiat, order = 4, data = my.russia.data) #p = 0.31
+grangertest(week.fox ~ week.fiat, order = 5, data = my.russia.data) #p = 0.41
+
+cor.test(my.russia.data$week.fiat, my.russia.data$week.msnbc) #cor = .26 (.10, .41)
+cor.test(my.russia.data$week.fiat, my.russia.data$week.fox) #cor = .19 (.03, .34)
+
+```
+
+
+```{r}
+#CHINA CASES ONLY
+fiat.tv.china.data <- merge(fiat.china, tv.election.interfere.data, all = TRUE) %>%
+  replace(is.na(.), 0) 
+
+my.china.data <- merge(fiat.tv.china.data, polls.raw, all = TRUE) %>% 
+  mutate(fiat.indicator = case_when(total_engagement == 0 ~ 0,
+                                    total_engagement > 0 ~ 1)) %>% 
+  mutate(my.week = week(my.date),
+         year = year(my.date)) %>% 
+  replace(is.na(.), 0) %>% 
+  group_by(year, my.week) %>% 
+  mutate(week.fiat = sum(total_engagement),
+         week.msnbc = sum(msnbc),
+         week.fox = sum(fox),
+         week.cases = sum(fiat.indicator),
+         week.dem = sum(democrat)/length(democrat),
+         week.rep = sum(republican)/length(republican)) %>% 
+  select(-my.sum, -total_engagement, -msnbc, -fox, 
+         -fiat.indicator, -my.date, -democrat, -republican) %>% 
+  distinct() %>% 
+  replace_with_na(replace = list(week.dem = 0, week.rep = 0))
+
+grangertest(week.msnbc ~ week.fiat, order = 1, data = my.china.data) #p = 0.29
+grangertest(week.msnbc ~ week.fiat, order = 2, data = my.china.data) #p = 0.56
+grangertest(week.msnbc ~ week.fiat, order = 3, data = my.china.data) #p = 0.70
+grangertest(week.msnbc ~ week.fiat, order = 4, data = my.china.data) #p = 0.65
+grangertest(week.msnbc ~ week.fiat, order = 5, data = my.china.data) #p = 0.58
+
+grangertest(week.fox ~ week.fiat, order = 1, data = my.china.data) #p = 0.23
+grangertest(week.fox ~ week.fiat, order = 2, data = my.china.data) #p = 0.39
+grangertest(week.fox ~ week.fiat, order = 3, data = my.china.data) #p = 0.62
+grangertest(week.fox ~ week.fiat, order = 4, data = my.china.data) #p = 0.57
+grangertest(week.fox ~ week.fiat, order = 5, data = my.china.data) #p = 0.56
+
+cor.test(my.china.data$week.fiat, my.china.data$week.msnbc) #cor = -.12 (-.29, .05)
+cor.test(my.china.data$week.fiat, my.china.data$week.fox) #cor = .14 (-.27, .07)
+
+```
+
+```{r}
+#ratio of mentions of "election" and "fraud" on msnbc:fox
+#above 1 -> more mentions on MSNBC
+#below 1 -> more mentions on Fox
+fraud.ratio <- read_csv("./tvnews_20201210075705.csv") %>% filter(Value < 1000, Value != 0)
+
+fraud.ratio <- fraud.ratio %>% mutate(my.log = log(Value))
+
+summary(fraud.ratio$Value)
+hist(fraud.ratio$Value)
+
+summary(fraud.ratio$my.log)
+hist(fraud.ratio$my.log)
+
+
+t.test(fraud.ratio$Value, mu = 1, alternative = c("two.sided")) #p = 0.08, 0.93-2.12
+t.test(fraud.ratio$my.log, mu = 0, alternative = c("two.sided")) #p = 0.98, 0.33-0.32
+
+
+```
+
