@@ -90,10 +90,10 @@ The only t-test to give significant results was the first one:
 2. There is no evidence that Fox spent more time covering allegations about China and less time covering allegations about Russia than MSNBC. 
 3. There is no evidence that Fox spent more time covering allegations of electoral fraud than MSNBC.
 
-Because I used logged means for the t-test in order to normalize the data, the test means are not easy to interpret. Instead, these line graphs show how coverage by Fox and MSNBC have changed over time:
+Because I used logged means for the t-test in order to normalize the data, the test means are not easy to interpret. Instead, these line graphs show how coverage by Fox and MSNBC coverage has changed over time:
 
+<caption><b>Interfere graph</b></caption>
 <img src = "../images/interfere_stanford_graph.png">
-<caption>Russia graph</caption>
 [Click here to see full-size image.](https://hwsimpson33.github.io/pres2020/images/interfere_stanford_graph.png)
 
 
