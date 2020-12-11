@@ -21,3 +21,5 @@ Hello! Gov 1347 is a class on election analytics that will focus on predicting t
 ## [Final prediction](posts/final-prediction.md)
 
 ## [Post-election reflection](posts/accuracy.md)
+
+## [Narative: coverage of election interference](posts/narrative.md)
