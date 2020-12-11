@@ -88,7 +88,7 @@ In order to test the first three hypotheses, I ran t-tests on the logged amount 
 
 The only t-test to give significant results was the first one:
 
-1. Fox spent less time covering election interference allegations than MSNBC, p = 0.02.
+1. Fox spent less time covering election interference allegations than MSNBC, *p = 0.02*.
 2. There is no evidence that Fox spent more time covering allegations about China and less time covering allegations about Russia than MSNBC. 
 3. There is no evidence that Fox spent more time covering allegations of electoral fraud than MSNBC.
 
