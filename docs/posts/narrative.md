@@ -82,7 +82,7 @@ Quantitatively studying whether Republican or Democratic outlets spread more "fa
 
 It's important to remember that the Stanford Cable TV News Analyzer only counts the number of occurrences of a term, not the context in which it was covered or the message viewers took away. If the amount of coverage is the same, that does not mean that the content or the effect was the same!
 
-In order to test the first three hypotheses, I ran t-tests on the logged amount of time Fox and MSNBC spent on the terms "election" and "interfere," "election" and "Russia," "election" and "China," and "election" and "fraud." The data covers the period from November 1, 2018 (the beginning of the Interference 2020 dataset) to November 7, 2020 (when Joe Biden declared victory), with the exception of the election fraud dataset, which I limited to July 1, 2020 - December 12, 2020 in order to avoid mentions of election fraud in other countries and include the discussion on fraud since the election occurred.
+In order to test the first three hypotheses, I ran t-tests on the logged amount of time Fox and MSNBC spent on the terms "election" and "interfere," "election" and "Russia," "election" and "China," and "election" and "fraud." The data covers the period from November 1, 2018 (the beginning of the Interference 2020 dataset) to November 7, 2020 (when Joe Biden declared victory), with the exception of the election fraud dataset, which I limited to July 1, 2020 - December 8, 2020 in order to avoid mentions of election fraud in other countries and include the discussion on fraud since the election occurred.
 
 The only t-test to give significant results was the first one:
 
@@ -90,7 +90,11 @@ The only t-test to give significant results was the first one:
 2. There is no evidence that Fox spent more time covering allegations about China and less time covering allegations about Russia than MSNBC. 
 3. There is no evidence that Fox spent more time covering allegations of electoral fraud than MSNBC.
 
-Because I used logged means for the t-test in order to normalize the data, the test means are not easy to interpret. Instead, here are 
+Because I used logged means for the t-test in order to normalize the data, the test means are not easy to interpret. Instead, these line graphs show how coverage by Fox and MSNBC have changed over time:
+
+<img src = "../images/interfere_stanford_graph.png">
+<caption>Russia graph</caption>
+[Click here to see full-size image.](https://hwsimpson33.github.io/pres2020/images/interfere_stanford_graph.png)
 
 
 
