@@ -1,5 +1,5 @@
 
-Much ink has been spilled about disinformation, fake news, and foreign interference in the 2020 election. According to the Interference 2020 tracker, a project by the Atlantic Council's Digital Forensics Research Lab, there were dozens of allegations of foreign interference in the 2020 election with varying levels of credibility and influence. Foreign interference has become a political topic, with Republican alleging that investigations of possible collusion between the 2016 Trump campaign and Russia were politically motivated and Democrats accusing Republicans of trying to tie Joe Biden to [China](https://www.politico.com/news/2020/09/01/trump-says-china-supporting-biden-407054) for political reasons. Disinformation itself has become a politicized topic, with articles on how Trump's campaign [benefited from spreading fake news](https://www.theguardian.com/us-news/2020/nov/10/donald-trump-us-election-misinformation-media) and [amplified](https://www.nbcnews.com/politics/2020-election/russians-have-no-need-spread-misinformation-trump-his-allies-are-n1246653) [Russian](https://www.washingtonpost.com/lifestyle/media/trump-doesnt-need-russian-trolls-to-spread-disinformation-the-mainstream-media-does-it-for-him/2020/10/06/9612d602-07da-11eb-9be6-cf25fb429f1a_story.html) [misinformation](https://www.cnn.com/2020/08/17/politics/trump-retweets-known-russian-disinformation-biden-derkach/index.html). In fact, Google Trends shows that the states with the most searches for "disinformation" and "election interference" tend to be blue states, with the District of Colombia dominating both searches.
+Much ink has been spilled about disinformation, fake news, and foreign interference in the 2020 election. According to the Interference 2020 tracker, a project by the Atlantic Council's Digital Forensics Research Lab, there were dozens of allegations of foreign interference in the 2020 election with varying levels of credibility and influence. Foreign interference has become a political topic, with Republican alleging that investigations of possible collusion between the 2016 Trump campaign and Russia were politically motivated and Democrats accusing Republicans of trying to tie Joe Biden to [China](https://www.politico.com/news/2020/09/01/trump-says-china-supporting-biden-407054) for political reasons. Disinformation itself has become a politicized topic, with articles on how Trump's campaign [benefited from spreading fake news](https://www.theguardian.com/us-news/2020/nov/10/donald-trump-us-election-misinformation-media) and [amplified](https://www.nbcnews.com/politics/2020-election/russians-have-no-need-spread-misinformation-trump-his-allies-are-n1246653) [Russian](https://www.washingtonpost.com/lifestyle/media/trump-doesnt-need-russian-trolls-to-spread-disinformation-the-mainstream-media-does-it-for-him/2020/10/06/9612d602-07da-11eb-9be6-cf25fb429f1a_story.html) [misinformation](https://www.cnn.com/2020/08/17/politics/trump-retweets-known-russian-disinformation-biden-derkach/index.html). In fact, Google Trends shows that the states with the most searches for "disinformation" and "election interference" tend to be blue states, with the District of Colombia dominating both searches. These tables show the states with the most Google searches for the terms "election interference" and "disinformation." The numbers on this table represent the relative popularity of the searches in each state. The state with the largest number of searches is set to 100 and the state with the fewest searches is set to zero.
 
 <table style="border-collapse:collapse;" class=table_7838 border=2>
 <caption>Data on searches from Google Trends. Covers Nov. 1, 2018 - Dec. 9, 2020.</caption>
@@ -92,10 +92,18 @@ The only t-test to give significant results was the first one:
 
 Because I used logged means for the t-test in order to normalize the data, the test means are not easy to interpret. Instead, these line graphs show how coverage by Fox and MSNBC coverage has changed over time:
 
-<caption><b>Interfere graph</b></caption>
+<caption><b>Mentions of "election" and "interfere." Red is Fox, blue is MSNBC </b></caption>
 <img src = "../images/interfere_stanford_graph.png">
 [Click here to see full-size image.](https://hwsimpson33.github.io/pres2020/images/interfere_stanford_graph.png)
 
+MSNBC almost always gives more coverage to stories involving election interference, as the t-test above demonstrated
 
+But the graphs on discussion of Russia and China show no 
 
+<caption><b>Mentions of "election" and "Russia." Red is Fox, blue is MSNBC </b></caption>
+<img src = "../images/russia_stanford_graph.png">
+[Click here to see full-size image.](https://hwsimpson33.github.io/pres2020/images/russia_stanford_graph.png)
 
+<caption><b>Mentions of "election" and "China." Red is Fox, blue is MSNBC </b></caption>
+<img src = "../images/china_stanford_graph.png">
+[Click here to see full-size image.](https://hwsimpson33.github.io/pres2020/images/china_stanford_graph.png)

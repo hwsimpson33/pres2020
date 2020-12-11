@@ -31,6 +31,8 @@ library(tidyverse)
 library(lmtest)
 library(lubridate)
 library(naniar)
+library(tableHTML)
+library(lubridate)
 
 fiat.raw <- read_csv("./gov1347_fiat_data.csv")
 fiat.russia <- fiat.raw %>% filter(disinformant1 == "Russia" | disinformant2 == "Russia" | disinformant3 == "Russia")
@@ -233,3 +235,117 @@ t.test(fraud.ratio$my.log, mu = 0, alternative = c("two.sided")) #p = 0.98, 0.33
 
 ```
 
+
+```{r}
+googletrends <- read_csv("./Narrative blog post workbook - geoMap (1).csv")
+
+trends.table1 <- googletrends %>% select(State, `Election interference`) %>% head()
+trends.table2 <- googletrends %>% select(State_1, `Disinformation`) %>% rename(State = State_1) %>% head()
+
+table.1 <-  tableHTML(trends.table1, rownames = FALSE, border = 2, round = 4, caption = "Data on  searches from Google Trends. Covers Nov. 1, 2018 - Dec. 9, 2020.")
+table.2 <- tableHTML(trends.table2, rownames = FALSE, border = 2, round = 4)
+
+
+#turn this on if you want to print the HTML table, then copy and paste it from output to your md file
+print(table.1, viewer = FALSE)
+print(table.2, viewer = FALSE)
+
+
+
+```
+
+```{r}
+tv.interfere.data.raw <- read_csv("./tvnews_interfere.csv")
+
+tv.interfere.data <- tv.interfere.data.raw %>% pivot_wider(names_from = Query, values_from = Value)%>% 
+  dplyr::select(-Unit) %>% 
+  rename(msnbc = "text=\"election\" AND text=\"interfere\" AND channel=\"MSNBC\"",
+         fox = "text=\"election\" AND text=\"interfere\" AND channel=\"FOX\"",
+         my.date = Time) %>%  
+  mutate(log.msnbc = log(msnbc),
+         log.fox = log(fox)) %>% 
+  replace(. > 10^20, NA) %>% 
+  replace(. < -10^20, NA)
+
+t.test(tv.interfere.data$log.msnbc, tv.interfere.data$log.fox) #p = 0.02
+
+tv.russia.data.raw <- read_csv("./tvnews_russia.csv")
+
+tv.russia.data <- tv.russia.data.raw %>% pivot_wider(names_from = Query, values_from = Value)%>% 
+  dplyr::select(-Unit) %>% 
+  rename(msnbc = "text=\"election\" AND text=\"Russia\" AND channel=\"MSNBC\"",
+         fox = "text=\"election\" AND text=\"Russia\" AND channel=\"FOX\"",
+         my.date = Time) %>%  
+  mutate(log.msnbc = log(msnbc),
+         log.fox = log(fox)) %>% 
+  replace(. > 10^20, NA) %>% 
+  replace(. < -10^20, NA)
+
+t.test(tv.russia.data$log.msnbc, tv.russia.data$log.fox) #p = 0.20
+
+tv.china.data.raw <- read_csv("./tvnews_china.csv")
+
+tv.china.data <- tv.china.data.raw %>% pivot_wider(names_from = Query, values_from = Value)%>% 
+  dplyr::select(-Unit) %>% 
+  rename(msnbc = "text=\"election\" AND text=\"China\" AND channel=\"MSNBC\"",
+         fox = "text=\"election\" AND text=\"China\" AND channel=\"FOX\"",
+         my.date = Time) %>%  
+  mutate(log.msnbc = log(msnbc),
+         log.fox = log(fox)) %>% 
+  replace(. > 10^20, NA) %>% 
+  replace(. < -10^20, NA)
+
+t.test(tv.china.data$log.msnbc, tv.china.data$log.fox) #p = 0.5
+
+tv.fraud.data.raw <- read_csv("./tvnews_fraud.csv")
+
+tv.fraud.data <- tv.fraud.data.raw %>% pivot_wider(names_from = Query, values_from = Value)%>% 
+  dplyr::select(-Unit) %>% 
+  rename(msnbc = "text=\"election\" AND text=\"fraud\" AND channel=\"MSNBC\"",
+         fox = "text=\"election\" AND text=\"fraud\" AND channel=\"FOX\"",
+         my.date = Time) %>%  
+  mutate(log.msnbc = log(msnbc),
+         log.fox = log(fox)) %>% 
+  replace(. > 10^20, NA) %>% 
+  replace(. < -10^20, NA)
+
+t.test(tv.fraud.data$log.msnbc, tv.fraud.data$log.fox) #p = 0.14
+
+my.interfere.data <- tv.interfere.data %>% select(-fox, -msnbc, -my.date) %>% gather(key = channel, value = "time") %>% mutate(term = "interfere")
+my.russia.data <- tv.russia.data %>% select(-fox, -msnbc, -my.date) %>% gather(key = channel, value = "time") %>% mutate(term = "russia")
+my.tv.data <- rbind (my.interfere.data, my.russia.data)
+
+# my.plot <- tv.interfere.data %>% ggplot() + 
+#   geom_line(aes(x = my.date, y = fox)) + 
+#   geom_line(aes(x = my.date, y = msnbc)) + 
+#   scale_x_date(
+#                breaks = "1 week")
+#   theme_classic()
+# my.plot
+# 
+# my.test.plot <- tv.interfere.data %>% ggplot(aes(x = my.date, y = fox)) +
+#   stat_summary(fun = sum, geom = "line") + 
+#   scale_x_date(
+#                  breaks = "1 week")
+# my.test.plot
+# 
+# ggplot(df, aes(x = timeseq, y = data)) +
+#     stat_summary(fun.y = sum, geom = "line") +
+#     scale_x_date(labels = date_format("%Y-%m-%d"),
+#                  breaks = "1 week")
+```
+
+```{r}
+hist(tv.interfere.data$log.fox)
+hist(tv.interfere.data$log.msnbc)
+
+my.test.data <- my.interfere.data %>% filter(channel == "log.fox")
+hist(my.test.data$time)
+
+my.test.data2 <- my.interfere.data %>% filter(channel == "log.msnbc")
+hist(my.test.data2$time)
+
+summary(my.test.data$time)
+summary(my.test.data2$time)
+
+```
