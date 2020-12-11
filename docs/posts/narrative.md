@@ -2,7 +2,7 @@
 Much ink has been spilled about disinformation, fake news, and foreign interference in the 2020 election. According to the Interference 2020 tracker, a project by the Atlantic Council's Digital Forensics Research Lab, there were dozens of allegations of foreign interference in the 2020 election with varying levels of credibility and influence. Foreign interference has become a political topic, with Republican alleging that investigations of possible collusion between the 2016 Trump campaign and Russia were politically motivated and Democrats accusing Republicans of trying to tie Joe Biden to [China](https://www.politico.com/news/2020/09/01/trump-says-china-supporting-biden-407054) for political reasons. Disinformation itself has become a politicized topic, with articles on how Trump's campaign [benefited from spreading fake news](https://www.theguardian.com/us-news/2020/nov/10/donald-trump-us-election-misinformation-media) and [amplified](https://www.nbcnews.com/politics/2020-election/russians-have-no-need-spread-misinformation-trump-his-allies-are-n1246653) [Russian](https://www.washingtonpost.com/lifestyle/media/trump-doesnt-need-russian-trolls-to-spread-disinformation-the-mainstream-media-does-it-for-him/2020/10/06/9612d602-07da-11eb-9be6-cf25fb429f1a_story.html) [misinformation](https://www.cnn.com/2020/08/17/politics/trump-retweets-known-russian-disinformation-biden-derkach/index.html). In fact, Google Trends shows that the states with the most searches for "disinformation" and "election interference" tend to be blue states, with the District of Colombia dominating both searches.
 
 <table style="border-collapse:collapse;" class=table_7838 border=2>
-<caption>Data on Google searches from Google Trends. Covers Nov. 1, 2018 - Dec. 9, 2020.</caption>
+<caption>Data on searches from Google Trends. Covers Nov. 1, 2018 - Dec. 9, 2020.</caption>
 <thead>
 <tr>
   <th id="tableHTML_header_1">State</th>
@@ -38,7 +38,6 @@ Much ink has been spilled about disinformation, fake news, and foreign interfere
 </table>
 
 <table style="border-collapse:collapse;" class=table_6071 border=2>
-<caption>Data on Google searches from Google Trends. Covers Nov. 1, 2018 - Dec. 9, 2020.</caption>
 <thead>
 <tr>
   <th id="tableHTML_header_1">State</th>
@@ -91,7 +90,7 @@ The only t-test to give significant results was the first one:
 2. There is no evidence that Fox spent more time covering allegations about China and less time covering allegations about Russia than MSNBC. 
 3. There is no evidence that Fox spent more time covering allegations of electoral fraud than MSNBC.
 
-Because I used logged means for the t-test in order to normalize the data, the test means are not easy to interpret. Instead, I will 
+Because I used logged means for the t-test in order to normalize the data, the test means are not easy to interpret. Instead, here are 
 
 
 
