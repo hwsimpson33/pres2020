@@ -266,6 +266,9 @@ summary(model11)
 model12 <- lm(total_fo ~ partisan + White + age65 + ec.votes + battle, data = county.data)
 summary(model12)
 
+test.model <- lm(dem_fo ~ partisan + White + age65 + as.factor(year) + ec.votes*battle, data = county.data)
+summary(test.model)
+
 ```
 ```{r}
 stargazer(model1, model2, header = FALSE, type = "text", 
@@ -301,4 +304,3 @@ stargazer(model9, model10, model11, model12, header = FALSE, type = "text",
           add.lines = list(c("State fixed effects", "Yes", "No", "No", "No")))
 
 ```
-
