@@ -1,6 +1,8 @@
 ---
 title: "gov97"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -11,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(readxl)
+library(stargazer)
 
 #we need: ad data (2000-2012, state), voter registration data (2000-2012, county), demographics (2000-2012, county), field offices (2004-2012 by county for dems, 2012 by county for republicans)
 #todo: merge this into a state-level dataset; merge registration, demographics, and field offices into a county-level dataset; run regressions (separate county-level for dems and reps)
@@ -189,9 +192,7 @@ state.data <- merge(ads, registration.state, all = TRUE, by = c("state", "year")
 state.data <- merge(state.data, demo.state, all = TRUE, by = c("state", "year"))
 
 state.data <- state.data %>% filter(!is.na(state.partisan))
-```
 
-```{r}
 college <- read_excel("./electoralcollege.xlsx", skip = 1) %>% rename(state_abb = State)
 
 county.data <- merge(registration, field, all = TRUE, by = c("fips", "year")) %>% 
@@ -208,12 +209,17 @@ county.data <- county.data %>% filter(!is.na(partisan), !is.na(dem_fo))
 
 ```{r}
 #state-level regressions (hypothesis 1)
+
+#renaming so that control variables aren't excluded by stargazer's omit
+state.data <- state.data %>% rename(st.white = state.white, 
+                                    st.age = state.age)
+
 #state fixed effects -> not significant
-model1 <- lm(attack_per ~ state.partisan + state.white + state.age + state, data = state.data)
+model1 <- lm(attack_per ~ state.partisan + st.white + st.age + state, data = state.data)
 summary(model1)
 
 #no state fixed effects -> not significant
-model2 <- lm(attack_per ~ state.partisan + state.white + state.age, data = state.data)
+model2 <- lm(attack_per ~ state.partisan + st.white + st.age, data = state.data)
 summary(model2)
 ```
 
@@ -261,5 +267,38 @@ model12 <- lm(total_fo ~ partisan + White + age65 + ec.votes + battle, data = co
 summary(model12)
 
 ```
+```{r}
+stargazer(model1, model2, header = FALSE, type = "text", 
+          title = "Hypothesis 1: Partisanship and campaign ads", 
+          dep.var.labels.include = FALSE, 
+          dep.var.caption = c("Attack ads, percent of spending on all ads"), 
+          covariate.labels = c("Partisan voter registration", 
+                               "Percent white", "Percent over 65 years old"),
+          omit.stat = c("f", "ser"),
+          notes.label = "",
+          omit = c("state"),
+          add.lines = list(c("State fixed effects", "Yes", "No")))
 
+stargazer(model3, model4, model5, model6, model7, model8, header = FALSE, type = "text",
+          title = "Hypothesis 2: Partisanship and field offices",
+          dep.var.labels.include = FALSE,
+          dep.var.caption = c("Number of Democratic field offices"),
+          covariate.labels = c("Partisan voter registration", "Percent white", "Percent over 65 years old", "Battleground", "Electoral college votes"),
+          omit.stat = c("f", "ser"),
+          notes.label = "",
+          omit = c("state", "year"),
+          add.lines = list(c("State fixed effects", "Yes", "No", "No", "No", "No", "No"),
+                           c("Year fixed effects", "No", "Yes", "No", "No", "Yes", "Yes")))
+
+stargazer(model9, model10, model11, model12, header = FALSE, type = "text",
+          title = "Hypothesis 2: Partisanship and field offices (2012 only)",
+          dep.var.labels.include = FALSE,
+          dep.var.caption = c("Number of Republican and Democratic field offices"),
+          covariate.labels = c("Partisan voter registration", "Percent white", "Percent over 65 years old", "Electoral college votes", "Battleground"),
+          omit.stat = c("f", "ser"),
+          notes.label = "",
+          omit = c("state"),
+          add.lines = list(c("State fixed effects", "Yes", "No", "No", "No")))
+
+```
 
