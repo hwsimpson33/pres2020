@@ -1,0 +1,136 @@
+---
+title: "gov97"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+rm(list = ls())
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(readxl)
+
+#we need: ad data (2000-2012, state), voter registration data (2000-2012, county), demographics (2000-2012, county), field offices (2004-2012 by county for dems, 2012 by county for republicans)
+#todo: prepare state-level versions of registration, demo; merge this into a state-level dataset; merge registration, demographics, and field offices into a county-level dataset; run regressions (separate county-level for dems and reps)
+```
+
+```{r}
+#get ad data into the correct format
+ads1 <- read_csv("ad_campaigns_2000-2012.csv") %>% 
+  group_by(creative, state, cycle) %>% 
+  arrange(creative, state, cycle) %>% 
+  mutate(campaign_sum = sum(total_cost)) %>% 
+  select(party, state, cycle, creative, campaign_sum) %>% 
+  unique()
+
+ads2 <- read_csv("ad_creative_2000-2012.csv") %>% 
+  select(-ad_issue, -ad_purpose) %>% 
+  unique()
+
+ads <- merge(ads1, ads2, all = TRUE, by = c("creative", "cycle", "party")) %>% 
+  filter(ad_tone != "other", !is.na(ad_tone)) %>% 
+  mutate(attack = case_when((ad_tone == "attack") ~ "yes",
+                             (ad_tone != "attack") ~ "no")) %>% 
+  group_by(cycle, party, state, attack) %>%
+  arrange(cycle, party, state, attack) %>% 
+  mutate(attack_sum = sum(campaign_sum)) %>% 
+  select(-creative, -campaign_sum, -ad_tone) %>% 
+  unique() %>% 
+  group_by(cycle, party, state) %>% 
+  mutate(state_sum = sum(attack_sum)) %>% 
+  filter(attack == "yes") %>% 
+  mutate(attack_per = attack_sum / state_sum) %>% 
+  select(-attack, -attack_sum, -state_sum)
+```
+
+```{r}
+#get field office data into the correct format
+field1 <- read_csv("fieldoffice_2004-2012_dems.csv") %>% 
+  select(year, state, fips, battle, number_fo, dummy_fo) %>% 
+  rename(dem_fo = number_fo,
+         dummy_dem_fo = dummy_fo)
+field2 <- read_csv("fieldoffice_2012_bycounty.csv") %>% 
+  mutate(year = 2012) %>% 
+  select(state, fips, obama12fo, romney12fo, battle, swing, core_dem, core_rep, year) %>% 
+  rename(dem_fo = obama12fo) %>% 
+  select(-state, -battle)
+
+field <- merge(field1, field2, all = TRUE, by = c("fips", "year", "dem_fo"))
+````
+
+```{r}
+#get voter registration data into the correct format
+#2004
+county.04.data <- read_excel("./Turnout_Data_2004.xlsx", sheet = 3) %>% 
+  filter(!is.na(...1), ...2 != "T") %>% 
+  select(...1, 
+         ...2, 
+         `Total Population`, 
+         `Voting Age Pop`, 
+         `Total Registered`, 
+         Turnout, 
+         Democrat...18, 
+         Republican...19, 
+         `Independent/Unenrolled...20`, 
+         FIPS) %>% 
+  dplyr::rename(dem.reg = Democrat...18, 
+         rep.reg = Republican...19,
+         ind.reg = `Independent/Unenrolled...20`) %>% 
+  mutate(year = 2004)
+
+#2008
+county.08.data <- read_excel("./Turnout_Data_2008.xlsx", sheet = 3) %>% 
+  filter(!is.na(...1), ...2 != "T") %>% 
+  select(...1, 
+         ...2, 
+         `Total Population`, 
+         `Voting Age Pop`, 
+         `Total Registered`, 
+         Turnout, 
+         Democrat...19, 
+         Republican...20, 
+         `Independent/Unenrolled...21`, 
+         FIPS) %>% 
+  dplyr::rename(dem.reg = Democrat...19, 
+         rep.reg = Republican...20,
+         ind.reg = `Independent/Unenrolled...21`) %>% 
+  mutate(year = 2008)
+
+registration <- rbind(county.08.data, county.04.data)
+
+#2012
+county.12.data <- read_excel("./Turnout_Data_2012.xlsx", sheet = 3) %>% 
+  dplyr::rename(...1 = `<- expand at left`,
+         `Total Population` = Population,
+         `Total Registered` = `Total Reg`,
+         Turnout = `Total Vote`,
+         dem.reg = Democratic...19, 
+         rep.reg = Republican...20,
+         ind.reg = `Independent...21`) %>% 
+  filter(!is.na(...1), ...2 != "T") %>% 
+  select(...1, 
+         ...2, 
+         `Total Population`, 
+         `Voting Age Pop`, 
+         `Total Registered`, 
+         Turnout, 
+         dem.reg, 
+         rep.reg, 
+         ind.reg, 
+         FIPS) %>% 
+  mutate(year = 2012)
+
+registration <- rbind(registration, county.12.data) %>% 
+  rename(county = ...1, state = ...2) %>% 
+  select(-`Total Population`, -`Voting Age Pop`, -`Total Registered`, -Turnout)
+```
+
+```{r}
+demo <- read_csv("demog_county_1990-2018.csv") %>% 
+  select(year, state, fips_county, White, age65) %>% 
+  filter(year %in% c(2004, 2008, 2012))
+
+state.data <- merge(ads, registration, all = TRUE, )
+```
