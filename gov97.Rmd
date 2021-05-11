@@ -13,7 +13,7 @@ library(tidyverse)
 library(readxl)
 
 #we need: ad data (2000-2012, state), voter registration data (2000-2012, county), demographics (2000-2012, county), field offices (2004-2012 by county for dems, 2012 by county for republicans)
-#todo: prepare state-level versions of registration, demo; merge this into a state-level dataset; merge registration, demographics, and field offices into a county-level dataset; run regressions (separate county-level for dems and reps)
+#todo: merge this into a state-level dataset; merge registration, demographics, and field offices into a county-level dataset; run regressions (separate county-level for dems and reps)
 ```
 
 ```{r}
@@ -33,16 +33,17 @@ ads <- merge(ads1, ads2, all = TRUE, by = c("creative", "cycle", "party")) %>%
   filter(ad_tone != "other", !is.na(ad_tone)) %>% 
   mutate(attack = case_when((ad_tone == "attack") ~ "yes",
                              (ad_tone != "attack") ~ "no")) %>% 
-  group_by(cycle, party, state, attack) %>%
-  arrange(cycle, party, state, attack) %>% 
+  group_by(cycle, state, attack) %>%
+  arrange(cycle, state, attack) %>% 
   mutate(attack_sum = sum(campaign_sum)) %>% 
-  select(-creative, -campaign_sum, -ad_tone) %>% 
-  unique() %>% 
-  group_by(cycle, party, state) %>% 
+  select(-creative, -campaign_sum, -ad_tone, -party) %>% 
+  unique() %>% ungroup() %>% 
+  group_by(state, cycle) %>% arrange(state, cycle) %>% 
   mutate(state_sum = sum(attack_sum)) %>% 
   filter(attack == "yes") %>% 
   mutate(attack_per = attack_sum / state_sum) %>% 
-  select(-attack, -attack_sum, -state_sum)
+  select(-attack, -attack_sum, -state_sum) %>% 
+  rename(year = cycle)
 ```
 
 ```{r}
@@ -58,10 +59,32 @@ field2 <- read_csv("fieldoffice_2012_bycounty.csv") %>%
   select(-state, -battle)
 
 field <- merge(field1, field2, all = TRUE, by = c("fips", "year", "dem_fo"))
-````
+
+field <- field %>% mutate(total_fo = dem_fo + romney12fo)
+```
 
 ```{r}
 #get voter registration data into the correct format
+
+#2000
+county.00.data <- read_excel("./Turnout_Data_2000.xlsx", sheet = 3)
+county.00.data <- county.00.data %>% filter(!is.na(...1), ...2 != "T") %>% 
+  select(...1, 
+         ...2, 
+         `Total Population`, 
+         `Voting Age Population`, 
+         `Total Registered`, 
+         Turnout, 
+         Democrat...19, 
+         Republican...20, 
+         `Independent/Unenrolled...21`, 
+         FIPS) %>% 
+  dplyr::rename(`Voting Age Pop` = `Voting Age Population`,
+         dem.reg = Democrat...19, 
+         rep.reg = Republican...20,
+         ind.reg = `Independent/Unenrolled...21`) %>% 
+  mutate(year = 2000)
+
 #2004
 county.04.data <- read_excel("./Turnout_Data_2004.xlsx", sheet = 3) %>% 
   filter(!is.na(...1), ...2 != "T") %>% 
@@ -98,8 +121,6 @@ county.08.data <- read_excel("./Turnout_Data_2008.xlsx", sheet = 3) %>%
          ind.reg = `Independent/Unenrolled...21`) %>% 
   mutate(year = 2008)
 
-registration <- rbind(county.08.data, county.04.data)
-
 #2012
 county.12.data <- read_excel("./Turnout_Data_2012.xlsx", sheet = 3) %>% 
   dplyr::rename(...1 = `<- expand at left`,
@@ -122,15 +143,123 @@ county.12.data <- read_excel("./Turnout_Data_2012.xlsx", sheet = 3) %>%
          FIPS) %>% 
   mutate(year = 2012)
 
+registration <- rbind(county.00.data, county.04.data)
+registration <- rbind(county.08.data, registration)
+
 registration <- rbind(registration, county.12.data) %>% 
   rename(county = ...1, state = ...2) %>% 
-  select(-`Total Population`, -`Voting Age Pop`, -`Total Registered`, -Turnout)
+  select(-`Voting Age Pop`, -`Total Registered`, -Turnout) %>% 
+  rename(population = `Total Population`) %>% 
+  replace(is.na(.), 0) %>% 
+  filter(population != 0) %>% 
+  mutate(partisan = (rep.reg + dem.reg) / population) %>% 
+  filter(partisan != 0) %>% 
+  rename(fips = FIPS)
+
+registration.state <- registration %>% 
+  group_by(state, year) %>% 
+  arrange(state, year) %>% 
+  mutate(state.dem = sum(dem.reg), state.rep = sum(rep.reg), state.ind = sum(ind.reg), state.total = sum(population)) %>% 
+  select(-dem.reg, -rep.reg, -ind.reg, -county, -fips, -population, -partisan) %>% 
+  unique() %>% 
+  filter(state.total != 0) %>% 
+  mutate(state.partisan = (state.dem + state.rep) / state.total) %>% 
+  filter(state.partisan != 0)
 ```
 
 ```{r}
+#get demographics data into the correct format
+
 demo <- read_csv("demog_county_1990-2018.csv") %>% 
   select(year, state, fips_county, White, age65) %>% 
-  filter(year %in% c(2004, 2008, 2012))
+  filter(year %in% c(2000, 2004, 2008, 2012))
 
-state.data <- merge(ads, registration, all = TRUE, )
+demo.state <- demo %>% 
+  group_by(state) %>% arrange(state) %>% 
+  mutate(state.white = (sum(White) / length(White)),
+         state.age = (sum(age65) / length(age65))) %>% 
+  select(-fips_county, -White, -age65) %>% 
+  unique()
 ```
+
+
+```{r}
+#merge datasets
+state.data <- merge(ads, registration.state, all = TRUE, by = c("state", "year"))
+state.data <- merge(state.data, demo.state, all = TRUE, by = c("state", "year"))
+
+state.data <- state.data %>% filter(!is.na(state.partisan))
+```
+
+```{r}
+college <- read_excel("./electoralcollege.xlsx", skip = 1) %>% rename(state_abb = State)
+
+county.data <- merge(registration, field, all = TRUE, by = c("fips", "year")) %>% 
+  rename(state = state.x, state_abb = state.y) %>% 
+  mutate(new.fips = as.character(fips), #fips are coded as numbers
+         fips_county = str_sub(new.fips, str_length(new.fips) - 2, str_length(new.fips)))
+
+county.data <- merge(county.data, demo, all = TRUE, by = c("fips_county", "state", "year"))
+
+county.data <- merge(county.data, college, all = TRUE, by = "state_abb")
+
+county.data <- county.data %>% filter(!is.na(partisan), !is.na(dem_fo))
+```
+
+```{r}
+#state-level regressions (hypothesis 1)
+#state fixed effects -> not significant
+model1 <- lm(attack_per ~ state.partisan + state.white + state.age + state, data = state.data)
+summary(model1)
+
+#no state fixed effects -> not significant
+model2 <- lm(attack_per ~ state.partisan + state.white + state.age, data = state.data)
+summary(model2)
+```
+
+```{r}
+#county-level regressions (hypothesis 2)
+
+#dem only, state fixed effects -> not significant
+model3 <- lm(dem_fo ~ partisan + White + age65 + state, data = county.data)
+summary(model3)
+
+#dem only, year fixed effects -> significant
+model4 <- lm(dem_fo ~ partisan + White + age65 + as.factor(year), data = county.data)
+summary(model4)
+
+#dem only, no state fixed effects -> significant
+model5 <- lm(dem_fo ~ partisan + White + age65, data = county.data)
+summary(model5) 
+
+#dem only, no fixed effects, controlling for college vote, -> significant
+model6 <- lm(dem_fo ~ partisan + White + age65 + ec.votes, data = county.data)
+summary(model6) 
+
+#dem only, year fixed effects, controlling for college vote, -> significant
+model7 <- lm(dem_fo ~ partisan + White + age65 + ec.votes + as.factor(year), data = county.data)
+summary(model7) 
+
+#dem only, year fixed effects, controlling for college vote and battleground status -> not significant
+model8 <- lm(dem_fo ~ partisan + White + age65 + ec.votes + as.factor(year) + battle, data = county.data)
+summary(model8)
+
+#both parties, state fixed effects -> not significant
+model9 <- lm(total_fo ~ partisan + White + age65 + state, data = county.data)
+summary(model9)
+
+#both parties, no state fixed effects -> significant
+model10 <- lm(total_fo ~ partisan + White + age65, data = county.data)
+summary(model10) 
+
+#both parties, no fixed effects, controlling for college vote, -> not significant
+model11 <- lm(total_fo ~ partisan + White + age65 + ec.votes, data = county.data)
+summary(model11) 
+
+#both parties, no fixed effects controlling for college vote and battleground status -> not significant
+model12 <- lm(total_fo ~ partisan + White + age65 + ec.votes + battle, data = county.data)
+summary(model12)
+
+```
+
+
